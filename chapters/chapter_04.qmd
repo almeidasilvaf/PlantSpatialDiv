@@ -1,0 +1,238 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Expression divergence between duplicate pairs
+
+In this chapter, we will explore expression divergence between duplicate
+pairs using different metrics to investigate if there is biased divergence
+depending on the duplication mechanisms. 
+
+Let's start by loading the required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(tidyverse)
+library(SpatialExperiment)
+library(SummarizedExperiment)
+library(patchwork)
+library(exdiva)
+
+set.seed(123) # for reproducibility
+
+# Load helper functions
+source(here("code", "utils.R"))
+```
+
+Now, let's load `SpatialExperiment` objects created in chapter 1.
+
+```{r}
+# Load `SpatialExperiment` objects
+ath_spe <- readRDS(here("products", "result_files", "spe_ath.rds"))
+gma_spe <- readRDS(here("products", "result_files", "spe_gma.rds"))
+pap_spe <- readRDS(here("products", "result_files", "spe_pap.rds"))
+zma_spe <- readRDS(here("products", "result_files", "spe_zma.rds"))
+```
+
+And duplicate pairs/genes for each species, obtained in chapter 2.
+
+```{r}
+# Load duplicate pairs and genes
+ath_dups <- readRDS(here("data", "ath_duplicates.rds"))
+gma_dups <- readRDS(here("data", "gma_duplicates.rds"))
+pap_dups <- readRDS(here("data", "pap_duplicates.rds"))
+zma_dups <- readRDS(here("data", "zma_duplicates.rds"))
+```
+
+```{r}
+#| eval: true
+#| echo: false
+
+# Load objects created in this document to be able to create figures
+rho_ath <- readRDS(here("products", "result_files", "ath_spearman_rho.rds"))
+rho_gma <- readRDS(here("products", "result_files", "gma_spearman_rho.rds"))
+rho_pap <- readRDS(here("products", "result_files", "pap_spearman_rho.rds"))
+rho_zma <- readRDS(here("products", "result_files", "zma_spearman_rho.rds"))
+```
+
+## Aggregating `SpatialExperiment` objects to metaspot-level counts
+
+As demonstrated by @morabito2023hdwgcna, it is nearly impossible
+to get high gene-gene correlations in single-cell (and, hence, spatial)
+transcriptomics data, probably due to the inherent sparsity of such data.
+A proposed solution is to aggregate cells/spots into metacells/metaspots, what
+appears to solve the sparsity problem. We will do that with the helper
+function `aggregate_spots()`, which aggregates spots into metaspots of ~7 spots
+(k-means clustering, k = number of spots / 7) for each spatial domain.
+
+```{r}
+# Aggregate spots to metaspots
+ath_spe_ag <- lapply(ath_spe, aggregate_spots, spatial_domain = "cell_type")
+pap_spe_ag <- lapply(pap_spe, aggregate_spots, spatial_domain = "clusters")
+gma_spe_ag <- lapply(gma_spe, aggregate_spots, spatial_domain = "Tissue")
+zma_spe_ag <- lapply(zma_spe, aggregate_spots, spatial_domain = "cell_type", iter.max = 100)
+```
+
+## Exploring correlations between duplicate pairs
+
+Now, we will calculate Spearman's correlations between duplicate pairs and
+compare the distributions of correlation coefficients by duplication mode.
+
+```{r}
+# Calculate Spearman's correlations
+rho_ath <- lapply(
+    ath_spe_ag, calculate_cor,
+    dups = ath_dups$pairs,
+    assay_name = "logcounts"
+) |>
+    dplyr::bind_rows(.id = "sample")
+
+
+rho_pap <- lapply(
+    pap_spe_ag, calculate_cor,
+    dups = pap_dups$pairs,
+    assay_name = "logcounts"
+) |>
+    dplyr::bind_rows(.id = "sample")
+rho_pap$type <- as.character(rho_pap$type)
+
+rho_gma <- lapply(
+    gma_spe, calculate_cor,
+    dups = gma_dups$pairs,
+    assay_name = "logcounts"
+) |>
+    dplyr::bind_rows(.id = "sample")
+
+
+rho_zma <- lapply(
+    zma_spe, calculate_cor,
+    dups = zma_dups$pairs,
+    assay_name = "logcounts"
+) |>
+    dplyr::bind_rows(.id = "sample")
+```
+
+Next, for each sample, we will test for significant differences by 
+duplication mode using Wilcoxon signed-rank tests.
+
+```{r}
+# Compare means with Wilcoxon test
+comp_ath <- lapply(split(rho_ath, rho_ath$sample), compare, form = "cor ~ type")
+comp_gma <- lapply(split(rho_gma, rho_gma$sample), compare, form = "cor ~ type")
+comp_pap <- lapply(split(rho_pap, rho_pap$sample), compare, form = "cor ~ type")
+comp_zma <- lapply(split(rho_zma, rho_zma$sample), compare, form = "cor ~ type")
+```
+
+Now, we will combine results from all comparisons into a single data frame
+with comparisons in rows and samples in columns. Then, we will summarize it
+visually.
+
+```{r}
+# Combine results into a single data frame
+comp_combined <- bind_rows(
+    bind_rows(comp_ath, .id = "sample") |> mutate(species = "Ath"),
+    bind_rows(comp_gma, .id = "sample") |> mutate(species = "Gma"),
+    bind_rows(comp_pap, .id = "sample") |> mutate(species = "Pap"),
+    bind_rows(comp_zma, .id = "sample") |> mutate(species = "Zma")
+) |>
+    mutate(
+        padj = case_when(
+            padj_greater < padj_less ~ padj_greater,
+            TRUE ~ padj_less
+        ),
+        comparison = str_c(group1, group2, sep = " vs "),
+        sample = str_c(species, sample, sep = "_"),
+        mag_symbol = ifelse(magnitude != "small", "*", "")
+    ) |>
+    select(species, sample, comparison, padj, padj_interpretation, effsize, mag_symbol)
+
+p_rho_comp <- ggplot(
+    comp_combined, aes(x = sample, y = comparison, fill = padj_interpretation)
+) +
+    geom_tile(color = "gray90", linewidth = 0.8) +
+    geom_text(aes(label = mag_symbol), color = "gray90", size = 5) +
+    scale_fill_manual(
+        values = c("deepskyblue4", "firebrick", "gray80"), na.value = "gray80"
+    ) +
+    facet_grid(. ~ species, scales = "free_x", space = "free") +
+    theme_classic() +
+    theme(
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()
+    ) +
+    labs(
+        title = "Differences in gene-gene correlations by duplication mode",
+        subtitle = "Wilcoxon signed-rank test, P <0.05; * = moderate effect sizes",
+        x = "Samples", y = "Contrasts", fill = expression(H[1])
+    )
+    
+p_rho_comp
+```
+
+The figure shows that 
+
+## Duplicate co-occurrence in coexpression modules
+
+
+
+
+
+
+## Saving objects {.unnumbered}
+
+Finally, we will save important objects to reuse later.
+
+```{r}
+# Save objects as .rds files
+## Gene-gene correlation tables
+saveRDS(
+    rho_ath, compress = "xz", 
+    file = here("products", "result_files", "ath_spearman_rho.rds")
+)
+
+saveRDS(
+    rho_pap, compress = "xz", 
+    file = here("products", "result_files", "pap_spearman_rho.rds")
+)
+
+saveRDS(
+    rho_gma, compress = "xz",
+    file = here("products", "result_files", "gma_spearman_rho.rds")
+)
+
+saveRDS(
+    rho_zma, compress = "xz",
+    file = here("products", "result_files", "zma_spearman_rho.rds")
+)
+
+## Wilcoxon test statistics for differences in gene-gene correlations
+saveRDS(
+    comp_combined, compress = "xz",
+    file = here("products", "result_files", "wilcoxon_stats_rho_comparisons.rds")
+)
+
+
+## Plots
+saveRDS(
+    p_rho_comp, compress = "xz",
+    file = here("products", "plots", "heatmap_pairwise_rho_comparisons.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}

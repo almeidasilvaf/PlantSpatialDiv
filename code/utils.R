@@ -113,6 +113,7 @@ process_spe <- function(
 
 
 compare <- function(data, form, ref = NULL) {
+    
     # Wilcoxon test - greater and less alternatives
     wilcoxtest_greater <- tibble::as_tibble(data) %>%
         rstatix::wilcox_test(
