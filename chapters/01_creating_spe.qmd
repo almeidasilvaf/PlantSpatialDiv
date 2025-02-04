@@ -1,0 +1,721 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Spatial transcriptomic data acquisition
+
+In this chapter, we will describe the code used to obtain the data sets 
+used in this project. The data sets are:
+
+1. Arabidopsis leaves [@xia2022single]. In this study,
+authors obtained 26 samples of cauline leaves from *Arabidopsis thaliana*.
+
+2. Orchid flowers [@liu2022spatiotemporal]. In this study, authors obtained
+three samples from different sections of developing flowers from 
+*Phalaenopsis aphrodite*.
+
+3. Maize ear primordia (STOmics DB, STDS0000236). In this study, authors
+obtained four samples from developing maize ear primordia.
+
+4. Soybean nodules [@liu2023integrated]. In this study, authors
+obtained a sample from soybean nodules
+
+To start, let's load required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(SpatialExperiment)
+library(SummarizedExperiment)
+library(DropletUtils)
+library(tidyverse)
+library(patchwork)
+
+set.seed(123) # for reproducibility
+options(timeout = 1e10) # to download large data files
+
+# Load helper functions
+source(here("code", "utils.R"))
+bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+```
+
+## Data acquisition
+
+Now, we will download data as H5AD files and store them in a local directory.
+Each data set will be stored in a separate subdirectory. Then, we will create
+*.rds* files for each data set containing lists of `SpatialExperiment` 
+objects.
+
+### Arabidopsis leaves (Xia et al. 2022. *Developmental Cell*)
+
+Data will be obtained from the ftp repository of STOmics DB.
+
+```{r}
+#| eval: false
+
+# Create a vector with file names
+base_url <- "https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000104/stomics"
+samples <- c(
+    "S1-1_stereoseq.h5ad", "S1-2_stereoseq.h5ad", "S1-3_stereoseq.h5ad", 
+    "S1-4_stereoseq.h5ad", "S1-5_stereoseq.h5ad", "S1-6_stereoseq.h5ad", 
+    "S1-7_stereoseq.h5ad", "S2-1_stereoseq.h5ad", "S2-3_stereoseq.h5ad", 
+    "S2-4_stereoseq.h5ad", "S2-5_stereoseq.h5ad", "S2-6_stereoseq.h5ad", 
+    "S2-7_stereoseq.h5ad", "S3-1_stereoseq.h5ad", "S3-2_stereoseq.h5ad", 
+    "S3-3_stereoseq.h5ad", "S3-5_stereoseq.h5ad", "S3-6_stereoseq.h5ad", 
+    "S3-7_stereoseq.h5ad", "S4-1_stereoseq.h5ad", "S4-2_stereoseq.h5ad", 
+    "S4-3_stereoseq.h5ad", "S4-4_stereoseq.h5ad", "S4-5_stereoseq.h5ad", 
+    "S4-6_stereoseq.h5ad", "S4-7_stereoseq.h5ad"
+)
+names(samples) <- gsub("\\.h5ad", "", basename(samples))
+
+# Download files
+outdir <- "~/Documents/PlantSpatialDiv_data/arabidopsis"
+downloads <- unlist(lapply(samples, function(x) {
+    
+    fpath <- file.path(base_url, x)
+    d <- tryCatch(
+        download.file(url = fpath, destfile = file.path(outdir, x)),
+        error = function(e) NA
+    )
+
+    return(d)
+}))
+```
+
+Now, creating `SpatialExperiment` objects.
+
+```{r}
+# List files
+files <- list.files(outdir, full.names = TRUE)
+names(files) <- gsub("\\.h5ad", "", basename(files))
+
+# Create and preprocess `SpatialExperiment` objects
+ath_spe <- lapply(files, stomics2spe)
+ath_spe <- lapply(ath_spe, process_spe, min_exp = c(1, 0.1))
+
+# Save object to RDS file
+saveRDS(
+    ath_spe, compress = "xz", 
+    file = here("products", "result_files", "spe", "spe_ath.rds")
+)
+```
+
+### Orchid flowers (Liu et al. 2022. *Nucleic Acids Research*)
+
+We will download data from STOmics DB.
+
+```{r}
+#| eval: false
+
+# Create a vector with file URLs
+base_url <- "https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000149/stomics"
+samples <- c(
+    "STSP0000011/GSM5939574.h5ad",
+    "STSP0000012/GSM5939575.h5ad",
+    "STSP0000013/GSM5939576.h5ad",
+    "STSP0000011/GSM5939574_processed.h5ad",
+    "STSP0000012/GSM5939575_processed.h5ad",
+    "STSP0000013/GSM5939576_processed.h5ad"
+)
+names(samples) <- gsub("\\.h5ad", "", basename(samples))
+
+# Download files
+outdir <- "~/Documents/PlantSpatialDiv_data/orchid"
+downloads <- unlist(lapply(samples, function(x) {
+    
+    fpath <- file.path(base_url, x)
+    d <- tryCatch(
+        download.file(url = fpath, destfile = file.path(outdir, x)),
+        error = function(e) NA
+    )
+
+    return(d)
+}))
+```
+
+Now, creating `SpatialExperiment` objects.
+
+```{r}
+# List files
+files <- list.files(outdir, full.names = TRUE)
+names(files) <- gsub("\\.h5ad", "", basename(files))
+
+# Create and preprocess `SpatialExperiment` objects
+processed <- files[grepl("processed", files)]
+unprocessed <- files[!grepl("processed", files)]
+
+pap_spe <- lapply(seq_along(processed), function(x) {
+    
+    un <- stomics2spe(unprocessed[x], remote = FALSE)
+    proc <- stomics2spe(processed[x], remote = FALSE)
+    
+    # Add column `clusters` to unprocessed data
+    un$clusters <- proc$clusters
+    
+    return(un)
+})
+names(pap_spe) <- gsub("\\.h5ad", "", basename(unprocessed))
+
+pap_spe <- lapply(
+    pap_spe, process_spe, 
+    min_exp = c(1, 0.1), domain_col = "clusters"
+)
+
+# Save object to RDS file
+saveRDS(
+    pap_spe, compress = "xz", 
+    file = here("products", "result_files", "spe", "spe_pap.rds")
+)
+```
+
+### Maize ear primordia (Wang et al. 2024. *Nature Plants*)
+
+First, we will download H5AD files from STOmics DB.
+
+```{r}
+# Create a vector with file URLs
+burl <- "https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000236/stomics"
+samples <- c(
+    "STSP0007368/MaizeEar_rep3_Impute.h5ad",
+    "STSP0007369/MaizeEar_rep4_Impute.h5ad"
+)
+names(samples) <- gsub("\\.h5ad", "", basename(samples))
+
+# Download files
+outdir <- "~/Documents/PlantSpatialDiv_data/maize_ear"
+downloads <- unlist(lapply(samples, function(x) {
+    
+    fpath <- file.path(burl, x)
+    d <- tryCatch(
+        download.file(url = fpath, destfile = file.path(outdir, x)),
+        error = function(e) NA
+    )
+
+    return(d)
+}))
+```
+
+Now, downloading raw .gem files from STOmicsDB to obtain raw (i.e., 
+non-normalized) counts.
+
+```{r}
+# Create a vector with file URLs
+samples <- c(
+    "STSP0007368/MaizeEar_rep3_Raw_bin50.gem",
+    "STSP0007369/MaizeEar_rep4_Raw_bin50.gem"
+)
+names(samples) <- gsub("\\.gem", "", basename(samples))
+
+downloads <- unlist(lapply(samples, function(x) {
+    
+    fpath <- file.path(burl, x)
+    d <- tryCatch(
+        download.file(url = fpath, destfile = file.path(outdir, basename(x))),
+        error = function(e) NA
+    )
+
+    return(d)
+}))
+```
+
+Next, creating `SpatialExperiment` objects.
+
+```{r}
+# Create a data frame with paths to H5AD and .gem files
+f <- list.files("~/Documents/PlantSpatialDiv_data/maize_ear", full.names = TRUE)
+maize_paths <- data.frame(
+    Sample = c("MaizeEar_rep3", "MaizeEar_rep4"),
+    H5AD = f[endsWith(f, "h5ad")],
+    gem = f[endsWith(f, "gem")]
+)
+
+### For each sample, read processed and unprocessed data, and combine them
+zma_spe <- lapply(seq_len(nrow(maize_paths)), function(x) {
+    
+    # Read H5AD file as `SpatialExperiment`
+    spe <- stomics2spe(maize_paths$H5AD[x], remote = FALSE)
+    assay(spe, "logcounts") <- NULL
+    
+    # Read .gem file with raw counts and match spots to cols of `un`
+    coords <- spatialCoords(spe) |>
+        as.data.frame() |>
+        tibble::rownames_to_column("spot_id")
+    
+    gem <- readr::read_tsv(
+        maize_paths$gem[x], 
+        show_col_types = FALSE
+    ) |>
+        dplyr::right_join(coords, by = c("x" = "x_coord", "y" = "y_coord")) |>
+        dplyr::arrange(spot_id) |>
+        dplyr::select(geneID, spot_id, MIDCount) |>
+        tidyr::pivot_wider(
+            names_from = spot_id, values_from = MIDCount, values_fill = 0
+        ) |>
+        tibble::column_to_rownames("geneID") |>
+        as.matrix()
+        
+    gem <- as(gem, "dgCMatrix")
+    gem <- gem[, colnames(spe)]
+    gem <- gem[rownames(spe), ]
+    
+    # Replace the 'counts' assay of `spe` with new matrix
+    assay(spe, "counts") <- gem
+    
+    # Add 'logcounts' assay
+    spe <- scater::computeLibraryFactors(spe)
+    spe <- scater::logNormCounts(spe)
+    
+    return(spe)
+})
+names(zma_spe) <- maize_paths$Sample
+
+zma_spe <- lapply(
+    zma_spe, process_spe, 
+    min_exp = c(1, 0.1), domain_col = "cell_type"
+)
+
+# Save object to RDS file
+saveRDS(
+    zma_spe, compress = "xz", 
+    file = here("products", "result_files", "spe", "spe_zma.rds")
+)
+```
+
+
+### Soybean nodules (Liu et al. 2023. *Nature Plants*)
+
+First, we will download H5AD files from OMIX.
+
+```{r}
+# Download H5AD files
+sample_urls <- c(
+    "https://download.cncb.ac.cn/OMIX/OMIX002290/OMIX002290-01.h5ad"
+)
+names(sample_urls) <- gsub("\\.h5ad", "", basename(sample_urls))
+
+lapply(seq_along(sample_urls), function(x) {
+    
+    url <- sample_urls[x]
+    outfile <- file.path(
+        "~/Documents/PlantSpatialDiv_data/soybean", basename(url)
+    )
+    
+    d <- tryCatch(
+        download.file(url = url, destfile = outfile),
+        error = function(e) NA
+    )
+    
+    return(d)
+})
+```
+
+Now, creating `SpatialExperiment` objects.
+
+```{r}
+# List files
+files <- list.files("~/Documents/PlantSpatialDiv_data/soybean", full.names = TRUE)
+names(files) <- gsub("\\.h5ad", "", basename(files))
+
+# Create and preprocess `SpatialExperiment` objects
+gma_spe <- lapply(files, function(x) {
+    
+    ### Read H5AD file as a SingleCellExperiment object
+    sce <- zellkonverter::readH5AD(x)
+    
+    ### Convert SingleCellExperiment to SpatialExperiment
+    coords <- as.matrix(SingleCellExperiment::reducedDim(sce, "spatial"))
+    colnames(coords) <- c("x_coord", "y_coord")
+    
+    spe <- SpatialExperiment::SpatialExperiment(
+        assays = list(counts = assay(sce, "raw")),
+        colData = SummarizedExperiment::colData(sce),
+        rowData = SummarizedExperiment::rowData(sce),
+        spatialCoords = coords
+    )
+    
+    ### Add 'logcounts' assay
+    spe <- scater::computeLibraryFactors(spe)
+    spe <- scater::logNormCounts(spe)
+    
+    ### Process the `SpatialExperiment` object
+    spe <- process_spe(spe, min_exp = c(1, 0.1), domain_col = "Tissue")
+    
+    return(spe)
+})
+```
+
+The original H5AD file contains 4 different slides combined into a single
+file. Hence, the `SpatialExperiment` object we created contains 4 sections
+that must be split into separate objects. Information on slides are available
+as suffixes in spot IDs as `<spot>-<slide>`.
+
+```{r}
+# Splitting slides into separate `SpatialExperiment` objects
+slide_ids <- unique(gsub(".*-", "", colnames(gma_spe$`OMIX002290-01`)))
+gma_spe_final <- lapply(slide_ids, function(x) {
+    spe <- gma_spe[[1]]
+    spe <- spe[, grepl(x, colnames(spe))]
+    
+    return(spe)
+})
+names(gma_spe_final) <- slide_ids
+
+# Saving objects to RDS files
+saveRDS(
+    gma_spe_final, compress = "xz", 
+    file = here("products", "result_files", "spe", "spe_gma.rds")
+)
+```
+
+
+### Germinating barley seeds (Peirats-Llobet et al. 2023. *NAR*)
+
+First, let's obtain data from GEO (accession *GSE218970*).
+
+```{bash}
+#| eval: false
+
+# Download .tar file from GEO
+wget https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE218970&format=file
+tar -zxvf GSE218970_RAW.tar
+
+# Extract all files in subdirectory
+cd GSE218970_RAW
+for file in *.tar.gz; do 
+    mkdir -p "${file%.tar.gz}/outs" && 
+    tar -xzf "$file" -C "${file%.tar.gz}/outs" --strip-components=1; 
+done
+```
+
+Now, let's read all files as `SpatialExperiment` objects.
+
+```{r}
+# List directories with `spatial/` subdir (some don't have it)
+dirs <- list.dirs(
+    path = "~/Downloads/GSE218970_RAW", full.names = TRUE, recursive = FALSE
+)
+dirs <- dirs[!grepl("test", dirs)]
+
+keep_idx <- which(sapply(dirs, function(x) {
+    file.exists(file.path(x, "outs/spatial", "tissue_positions_list.csv"))
+}) == TRUE)
+dirs <- dirs[keep_idx]
+
+# Define function to read SpaceRanger output as a `SpatialExperiment` obj
+spaceranger2spe <- function(dir) {
+    
+    # Create `SpatialExperiment` and add 'spatialCoords' slot
+    spe <- SpatialExperiment::read10xVisium(
+        samples = dir,
+        type = "sparse", data = "filtered",
+        images = "lowres", load = FALSE
+    )
+    coords <- as.matrix(colData(spe)[, c("array_col", "array_row")])
+    colnames(coords) <- c("x_coord", "y_coord")    
+    spatialCoords(spe) <- coords
+    
+    # Add per-spot QC metrics
+    spe <- scuttle::addPerCellQC(spe)
+    
+    # Prefiltering: remove spots with sum of counts too low (<10)
+    spe <- spe[, spe$detected >= 10]
+
+    # Add logcounts
+    spe <- scater::computeLibraryFactors(spe)
+    spe <- scater::logNormCounts(spe)
+    
+    return(spe)
+}
+
+# Create objects
+hvu_spe <- lapply(dirs, spaceranger2spe)
+names(hvu_spe) <- basename(dirs)
+
+# Process `SpatialExperiment` objects
+hvu_spe <- lapply(hvu_spe, process_spe, min_exp = c(1, 0.1), remove_missing = FALSE)
+```
+
+Next, we will add spatial domain annotation to spots using data obtained
+from the authors (sent by email).
+
+```{r}
+hvu_domains <- read.csv(here("data", "hvu_spot_identity.csv"), row.names = 1)
+
+# Add domain annotation to spots
+hvu_spe <- lapply(names(hvu_spe), function(x) {
+    
+    meta <- unlist(strsplit(x, "_"))
+    sa <- hvu_domains |>
+        dplyr::filter(
+            slide_number == meta[2], 
+            time == meta[3],
+            section == meta[4]
+        ) |>
+        tibble::remove_rownames() |>
+        tibble::column_to_rownames("barcode")
+    
+    # Update `SpatialExperiment` object
+    new_spe <- hvu_spe[[x]]
+    colData(new_spe) <- merge(
+        as.data.frame(colData(new_spe)), sa, by = "row.names", all.x = TRUE
+    ) |>
+        tibble::column_to_rownames("Row.names") |>
+        DataFrame()
+    
+    return(new_spe)
+})
+names(hvu_spe) <- basename(dirs)
+
+# Remove `ge10` samples - no domain annotation
+hvu_spe <- hvu_spe[!grepl("ge10", names(hvu_spe))]
+```
+
+Finally, we will replace gene IDs with the most recent assembly available
+on Ensembl Plants. For that, we will use Ensembl Plants' 
+**ID History Converter**.
+
+```{r}
+# Create a file with barley gene IDs and export it
+gene_ids <- lapply(hvu_spe, rownames) |> unlist() |> unique()
+
+write_tsv(data.frame(Gene = gene_ids), file = "~/Downloads/hvulgare_ids.tsv")
+```
+
+The file `hvulgare_ids.tsv` was used as input to ID History Converter in 
+Ensembl Plants release 60, and correspondence between IDs were saved to
+`products/tables/hvu_id_correspondence.csv`. Let's read it and use it to
+convert old IDs to new IDs.
+
+```{r}
+hvu_ids <- read_csv(
+    here("products", "tables", "hvu_id_correspondence.csv"),
+    show_col_types = FALSE
+) |>
+    janitor::clean_names() |>
+    dplyr::filter(release != "Release") |>
+    mutate(
+        mapping_score = as.numeric(mapping_score),
+        old_stable_id = str_replace_all(old_stable_id, "\\.[0-9]$", ""),
+        new_stable_id = str_replace_all(new_stable_id, "\\.[0-9]$", "")
+    ) |>
+    arrange(-mapping_score) |>
+    select(old_stable_id, new_stable_id) |>
+    distinct(old_stable_id, .keep_all = TRUE) |>
+    distinct(new_stable_id, .keep_all = TRUE)
+```
+
+We will now use this ID correspondence data frame to convert gene IDs
+in the `SpatialExperiment` objects.
+
+```{r}
+# Replace old IDs with new ones
+hvu_spe_final <- lapply(hvu_spe, function(x) {
+    
+    y <- x[rownames(x) %in% hvu_ids$old_stable_id, ]
+    idx <- match(rownames(y), hvu_ids$old_stable_id)
+    rownames(y) <- hvu_ids$new_stable_id[idx]
+    
+    return(y)
+})
+
+# Saving objects to RDS files
+saveRDS(
+    hvu_spe_final, compress = "xz", 
+    file = here("products", "result_files", "spe", "spe_hvu.rds")
+)
+```
+
+## Summary statistics
+
+Next, we will explore and visualize summary statistics (number of expressed 
+genes, number of spots, spatial domains, etc) for each `SpatialExperiment` 
+object.
+
+We will start by loading the `SpatialExperiment` objects created in
+the previous section.
+
+```{r}
+# Load `SpatialExperiment` objects
+ath_spe <- readRDS(here("products", "result_files", "spe", "spe_ath.rds"))
+pap_spe <- readRDS(here("products", "result_files", "spe", "spe_pap.rds"))
+zma_spe <- readRDS(here("products", "result_files", "spe", "spe_zma.rds"))
+gma_spe <- readRDS(here("products", "result_files", "spe", "spe_gma.rds"))
+hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
+```
+
+### Dimensions and spatial domains
+
+Here, we will explore the dimensions (genes x spots) and number of
+spatial domains of each object.
+
+```{r}
+# Define helper function to get number of genes, spots, and domains
+count_dims <- function(spe, domain = "cell_type") {
+    df <- data.frame(
+        Genes = nrow(spe), 
+        Spots = ncol(spe), 
+        Domains = length(unique(spe[[domain]]))
+    )
+    return(df)
+}
+
+# Get summary stats for each object
+spe_stats <- bind_rows(
+    ## Ath
+    lapply(ath_spe, count_dims, domain = "cell_type") |> 
+        bind_rows(.id = "sample") |>
+        mutate(species = "Ath"),
+    ## Gma
+    lapply(gma_spe, count_dims, domain = "annotation") |> 
+        bind_rows(.id = "sample") |>
+        mutate(species = "Gma"),
+    ## Pap
+    lapply(pap_spe, count_dims, domain = "clusters") |> 
+        bind_rows(.id = "sample") |>
+        mutate(species = "Pap"),
+    ## Zma
+    lapply(zma_spe, count_dims, domain = "cell_type") |> 
+        bind_rows(.id = "sample") |>
+        mutate(species = "Zma"),
+    ## Hvu
+    lapply(hvu_spe, count_dims, domain = "tissue") |> 
+        bind_rows(.id = "sample") |>
+        mutate(species = "Hvu")
+)
+```
+
+We can visualize such statistics grouped by species.
+
+```{r}
+# Plot number of genes, spots, and domains per species
+p_spestats <- spe_stats |>
+    pivot_longer(cols = c(Genes, Spots, Domains)) |>
+    mutate(name = factor(name, levels = c("Genes", "Spots", "Domains"))) |>
+    ggplot(aes(x = value, y = species, color = species)) +
+    ggbeeswarm::geom_quasirandom(alpha = 0.7, size = 2.5) +
+    ggsci::scale_color_jama() +
+    facet_wrap(~name, scales = "free_x") +
+    theme_classic() +
+    theme(
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = bg)
+    ) +
+    ggh4x::facetted_pos_scales(x = list(
+        scale_x_continuous(
+            limits = c(0, 3e4),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(
+            limits = c(0, 1e4),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(limits =  c(0, 20))
+    )) +
+    labs(
+        title = "Summary sample statistics across species",
+        subtitle = "Only genes with >1 count in at least 0.1% of the spots",
+        x = "Absolute frequency",
+        y = "Species"
+    )
+```
+
+### Spots and domains
+
+Next, we will plot spots colored by spatial for all slides.
+
+```{r}
+# Plot spots colored by domains
+p_spots <- list(
+    Ath = lapply(
+        ath_spe, ggspavis::plotSpots, in_tissue = NULL, 
+        annotate = "cell_type", pal = "Okabe-Ito"
+    ),
+    Gma = lapply(
+        gma_spe, ggspavis::plotSpots, in_tissue = NULL, 
+        annotate = "annotation", pal = "Okabe-Ito"
+    ),
+    Pap = lapply(
+        pap_spe, ggspavis::plotSpots, in_tissue = NULL, 
+        annotate = "clusters", pal = ggsci::pal_d3("category20")(20)
+    ),
+    Zma = lapply(
+        zma_spe, ggspavis::plotSpots, in_tissue = NULL, 
+        annotate = "cell_type", pal = ggsci::pal_d3("category20")(20)
+    ),
+    Hvu = lapply(
+        hvu_spe, ggspavis::plotSpots, in_tissue = NULL, 
+        annotate = "tissue", pal = ggsci::pal_d3("category20")(20)
+    )
+)
+```
+
+Now, we will create a plot with one slide for each species to use as 
+a summary of the data sets in this study.
+
+```{r}
+# Plot one slide per species
+p_spot_species <- wrap_plots(
+    p_spots$Ath[[12]] + ggtitle("A. thaliana"),
+    wrap_plots(
+        p_spots$Gma[[4]] + ggtitle("G. max"),
+        p_spots$Pap[[1]] + ggtitle("P. aphrodite"),
+        ncol = 2
+    ),
+    wrap_plots(
+        p_spots$Zma[[1]] + coord_fixed(ratio = 1.1) + ggtitle("Z. mays"),
+        p_spots$Hvu[[13]] + ggtitle("H. vulgare"),
+        ncol = 2
+    ),
+    nrow = 3,
+    heights = c(0.3, 1, 0.8)
+) &
+    theme(
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "italic")
+    )
+
+p_spot_species
+```
+
+
+## Saving objects
+
+Finally, we will save important objects and plots created in this document
+for future reuse.
+
+```{r}
+# Objects
+saveRDS(
+    spe_stats, compress = "xz",
+    file = here("products", "result_files", "spe_summary_stats.rds")
+)
+
+# Plots
+saveRDS(
+    p_spestats, compress = "xz",
+    file = here("products", "plots", "p_spe_summary_stats.rds")
+)
+
+saveRDS(
+    p_spot_species, compress = "xz",
+    file = here("products", "plots", "p_spots_one_slide_per_species.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}
