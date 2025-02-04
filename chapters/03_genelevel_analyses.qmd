@@ -1,0 +1,614 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Gene-level analyses
+
+In this chapter, we will investigate if different duplication modes
+are associated with differences in:
+
+1. Expression levels;
+2. Expression breadths;
+3. Spatial variability.
+
+To start, let's load required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(tidyverse)
+library(SpatialExperiment)
+library(SummarizedExperiment)
+library(DESpace)
+library(patchwork)
+
+set.seed(123) # for reproducibility
+options(timeout = 1e6) # to download large data files
+
+# Load helper functions
+source(here("code", "utils.R"))
+
+# Plot background
+bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+```
+
+Let's also load the `SpatialExperiment` objects created in chapter 1.
+
+```{r}
+# Load `SpatialExperiment` objects
+ath_spe <- readRDS(here("products", "result_files", "spe", "spe_ath.rds"))
+gma_spe <- readRDS(here("products", "result_files", "spe", "spe_gma.rds"))
+pap_spe <- readRDS(here("products", "result_files", "spe", "spe_pap.rds"))
+zma_spe <- readRDS(here("products", "result_files", "spe", "spe_zma.rds"))
+hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
+```
+
+We will also need the duplicate pairs and genes obtained in chapter 2.
+
+```{r}
+#| eval: true
+
+# Load duplicate pairs and genes
+dup_list <- readRDS(here("products", "result_files", "dup_list.rds"))
+```
+
+```{r}
+#| eval: true
+#| echo: false
+
+# Load data that were generated in this document to avoid long runtimes
+svgs <- readRDS(here("products", "result_files", "svg_list.rds"))
+```
+
+## Expression levels of duplicated genes
+
+Here, we will investigate if genes from particular duplication modes
+display significantly higher or lower expression levels compared to
+other duplication modes. We will start by calculating the sum and mean
+expression levels for all genes across samples combined.
+
+```{r}
+# Combine all `SpatialExperiment` objects in a single list
+spe_all <- list(
+    ath = ath_spe,
+    gma = gma_spe,
+    pap = pap_spe,
+    zma = zma_spe, 
+    hvu = hvu_spe
+)
+
+# Get sum of gene expression levels across all samples
+sum_all <- Reduce(rbind, lapply(names(spe_all), function(x) {
+    
+    samples <- names(spe_all[[x]])
+    sum_df <- Reduce(rbind, lapply(samples, function(y) {
+        
+        df <- rowSums(logcounts(spe_all[[x]][[y]])) |>
+            as.data.frame() |>
+            select(exp = 1) |>
+            tibble::rownames_to_column("gene") |>
+            inner_join(dup_list[[x]]$genes, by = "gene") |>
+            mutate(sample = y)
+            
+        return(df)
+    })) |>
+        mutate(species = x)
+    
+    return(sum_df)
+})) |>
+    mutate(type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")))
+
+# Get mean of gene expression levels across all samples
+mean_all <- Reduce(rbind, lapply(names(spe_all), function(x) {
+    
+    samples <- names(spe_all[[x]])
+    mean_df <- Reduce(rbind, lapply(samples, function(y) {
+        
+        df <- rowMeans(logcounts(spe_all[[x]][[y]]), na.rm = TRUE) |>
+            as.data.frame() |>
+            select(exp = 1) |>
+            tibble::rownames_to_column("gene") |>
+            inner_join(dup_list[[x]]$genes, by = "gene") |>
+            mutate(sample = y)
+            
+        return(df)
+    })) |>
+        mutate(species = x)
+    
+    return(mean_df)
+})) |>
+    mutate(type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")))
+```
+
+Now, we will compare distributions using a Kruskal-Wallis test followed by a
+post-hoc Dunn test. Then, we will visualize distributions with CLD indicating
+significant differences (if any).
+
+```{r}
+# Get summary estimates for all samples combined
+## Sum
+sum_combined <- sum_all |>
+    group_by(gene) |>
+    mutate(
+        csum = sum(exp), 
+        species = str_to_title(species),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")) 
+    ) |>
+    ungroup() |>
+    select(gene, type, species, csum) |>
+    distinct(gene, .keep_all = TRUE)
+
+## Mean
+mean_combined <- mean_all |>
+    group_by(gene) |>
+    mutate(
+        cmean = mean(exp, na.rm = TRUE), 
+        species = str_to_title(species),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    ) |>
+    ungroup() |>
+    select(gene, type, species, cmean) |>
+    distinct(gene, .keep_all = TRUE)
+    
+# Compare distros and get CLDs
+## Sum
+sum_clds <- lapply(
+    split(sum_combined, sum_combined$species),
+    cld_kw_dunn,
+    var = "type", value = "csum"
+) |>
+    bind_rows(.id = "species") |>
+    inner_join(
+        data.frame(
+            species = c("Ath", "Gma", "Pap", "Zma", "Hvu"),
+            x = c(3500, 2500, 5500, 4500, 3500)
+        )
+    ) |>
+    mutate(species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))) |>
+    dplyr::rename(type = Group)
+
+## Mean
+mean_clds <- lapply(
+    split(mean_combined, mean_combined$species),
+    cld_kw_dunn,
+    var = "type", value = "cmean"
+) |>
+    bind_rows(.id = "species") |>
+    inner_join(
+        data.frame(
+            species = c("Ath", "Gma", "Pap", "Zma", "Hvu"),
+            x = c(0.4, 0.4, 0.9, 0.4, 0.4)
+        )
+    ) |>
+    mutate(species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))) |>
+    dplyr::rename(type = Group)
+
+# Plot distros with CLDs
+## Sum
+p_sum_combined <- ggplot(sum_combined, aes(x = csum, y = type)) +
+    geom_violin(aes(fill = type), show.legend = FALSE) +
+    scale_fill_manual(values = palette.colors()) +
+    geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+    geom_label(
+        data = sum_clds,
+        aes(x = x, y = type, label = Letter)
+    ) +
+    facet_wrap(~species, nrow = 1, scales = "free_x") +
+    ggh4x::facetted_pos_scales(x = list(
+        scale_x_continuous(
+            limits = c(0, 4e3),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(
+            limits = c(0, 3e3),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(
+            limits = c(0, 6e3),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(
+            limits = c(0, 5e3),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        ),
+        scale_x_continuous(
+            limits = c(0, 4e3),
+            labels = scales::unit_format(unit = "K", scale = 1e-3)
+        )
+    )) +
+    labs(
+        x = "Sum of log-transformed normalized counts", y = NULL,
+        title = "Total expression levels and gene duplication mode",
+        subtitle = "CLD from Kruskal-Wallis + post-hoc Dunn's test; P <0.05"
+    ) +
+    theme_classic() +
+    theme(panel.background = element_rect(fill = bg))
+
+## Mean
+p_mean_combined <- ggplot(mean_combined, aes(x = cmean, y = type)) +
+    geom_violin(aes(fill = type), show.legend = FALSE) +
+    scale_fill_manual(values = palette.colors()) +
+    geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+    geom_label(
+        data = mean_clds, 
+        aes(x = x, y = type, label = Letter)
+    ) +
+    facet_wrap(~species, nrow = 1, scales = "free_x") +
+    ggh4x::facetted_pos_scales(x = list(
+        scale_x_continuous(limits = c(0, 0.5)),
+        scale_x_continuous(limits = c(0, 0.5)),
+        scale_x_continuous(limits = c(0, 1)),
+        scale_x_continuous(limits = c(0, 0.5)),
+        scale_x_continuous(limits = c(0, 0.5))
+    )) +
+    labs(
+        x = "Mean of log-transformed normalized counts", y = NULL,
+        title = "Mean expression level and gene duplication mode",
+        subtitle = "CLD from Kruskal-Wallis + post-hoc Dunn's test; P <0.05"
+    ) +
+    theme_classic() +
+    theme(panel.background = element_rect(fill = bg))
+```
+
+The figures show that, overall, segmental, tandem, and proximal duplicates 
+display higher expression levels compared to duplicated originating from other 
+duplication modes, especially dispersed duplicates. In germinating
+barley seeds, however, retrotransposed duplicates display the highest 
+expression values. Nevertheless, there seems to be an association
+between higher expression levels and duplication modes that tend to preserve
+cis-regulatory landscapes (SD, TD, and PD).
+
+## Expression breadths of duplicated genes
+
+We will now calculate the expression breadths (i.e., number of cell types
+in which genes are expressed) for all duplicated genes, and test for 
+differences in expression breadth by duplication mode. 
+
+We will start with the actual calculation of absolute expression breadth. Here,
+we will define gene i as expressed in cell type k if it is detected in 
+at least 5% of the spots corresponding to cell type k.
+
+```{r}
+#' Calculate the proportion of non-zero spots for each gene by cell type
+#'
+#' @param spe A SpatialExperiment object.
+#' @param cell_type Character, name of the column with cell type information.
+#'
+#' @return A data frame with variables `gene`, `cell_type`, and `prop_detected`.
+get_prop_detected <- function(spe, cell_type = "cell_type") {
+    
+    prop_detected <- scuttle::aggregateAcrossCells(
+        spe, statistics = "prop.detected",
+        ids = spe[[cell_type]]
+    ) |>
+        assay() |>
+        reshape2::melt() |>
+        dplyr::select(gene = Var1, cell_type = Var2, prop_detected = value) |>
+        mutate(cell_type = as.character(cell_type))
+    
+    return(prop_detected)
+}
+
+# Get proportion of gene detection (non-zero counts) by cell type
+prop_detected <- list(
+    Ath = lapply(spe_all$ath, get_prop_detected) |> bind_rows(.id = "sample"),
+    Gma = lapply(spe_all$gma, get_prop_detected, "annotation") |> bind_rows(.id = "sample"),
+    Pap = lapply(spe_all$pap, get_prop_detected, "clusters") |> bind_rows(.id = "sample"),
+    Zma = lapply(spe_all$zma, get_prop_detected, "cell_type") |> bind_rows(.id = "sample"),
+    Hvu = lapply(spe_all$hvu, get_prop_detected, "tissue") |> bind_rows(.id = "sample")
+) |> 
+    bind_rows(.id = "species")
+
+# Calculate absolute expression breadth
+eb <- prop_detected |>
+    group_by(species, gene, cell_type) |>
+    mutate(mean_prop = mean(prop_detected, na.rm = TRUE)) |>
+    ungroup() |>
+    filter(mean_prop >=0.01) |>
+    distinct(gene, cell_type, .keep_all = TRUE) |>
+    dplyr::count(species, gene) |>
+    inner_join(
+        bind_rows(
+            dup_list$ath$genes,
+            dup_list$gma$genes,
+            dup_list$pap$genes,
+            dup_list$zma$genes,
+            dup_list$hvu$genes
+        )
+    ) |>
+    mutate(
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+    )
+```
+
+Now, we will test for differences by duplication mode using Kruskal-Wallis +
+post-hoc Dunn's tests, as implemented in the wrapper function `cld_kw_dunn`.
+
+```{r}
+# Test for differences in expression breadth by duplication mode
+eb_test <- lapply(
+    split(eb, eb$species),
+    cld_kw_dunn,
+    var = "type", value = "n"
+) |>
+    bind_rows(.id = "species") |>
+    inner_join(
+        data.frame(
+            species = c("Ath", "Gma", "Pap", "Zma", "Hvu"),
+            x = c(5.5, 5.5, 2, 14, 16.5)
+        )
+    ) |>
+    mutate(species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))) |>
+    dplyr::rename(type = Group)
+```
+
+Next, we will visualize distributions of expression breadths for genes
+originating from different duplication modes.
+
+```{r}
+# Plot distributions of absolute expression breadths
+p_eb <- ggplot(eb, aes(x = n, y = type)) +
+    geom_violin(aes(fill = type), show.legend = FALSE) +
+    geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+    scale_fill_manual(values = palette.colors()) +
+    geom_label(
+        data = eb_test, 
+        aes(x = x, y = type, label = Letter)
+    ) +
+    facet_wrap(~species, nrow = 1, scales = "free_x") +
+    theme_classic() +
+    theme(
+        panel.background = element_rect(fill = bg)
+    ) +
+    labs(
+        title = "Absolute expression breadth and gene duplication mode",
+        subtitle = "CLD from Kruskal-Wallis + post-hoc Dunn's test; P <0.05",
+        x = "Number of cell types in which gene is detected",
+        y = NULL
+    )
+```
+
+The figure shows that
+there are significant differences in expression breadth depending on how
+genes were duplicated. Importantly, as we observed for expression levels,
+duplication mechanisms resulting in shared cis-regulatory landscapes (SD, 
+TD, PD) tend to create genes with greater expression breadth (i.e., expressed
+in more cell types).
+
+
+## Spatial variability of duplicated genes
+
+Here, we will identify spatially variable genes (SVGs) and test if they
+are enriched in genes originating from particular duplication modes.
+We will start by inferring SVGs using DESpace [@cai2024despace] using 
+cell types as spatial clusters. Genes will be considered SVGs if FDR <0.05.
+
+```{r}
+# Define helper function to identify SVGs with DESpace
+get_svg <- function(spe, spatial_cluster = "clusters") {
+    
+    # Get gene-wise test statistics
+    res <- DESpace_test(
+        spe = spe,
+        spatial_cluster = spatial_cluster,
+        replicates = FALSE,
+        min_counts = 1,
+        min_non_zero_spots = 5
+    )
+    gc()
+    
+    # Get a data frame of test statistics for significant SVGs
+    res_df <- res$gene_results |>
+        as.data.frame() |>
+        dplyr::filter(!is.na(FDR), FDR <= 0.05)
+    
+    return(res_df)
+}
+
+# Identify SVGs
+svgs <- list(
+    ath = lapply(ath_spe, get_svg, spatial_cluster = "cell_type"),
+    gma = lapply(gma_spe, get_svg, spatial_cluster = "annotation"),
+    pap = lapply(pap_spe, get_svg, spatial_cluster = "clusters"),
+    zma = lapply(zma_spe, get_svg, spatial_cluster = "cell_type"),
+    hvu = lapply(hvu_spe, get_svg, spatial_cluster = "tissue")
+)
+```
+
+Now, we will test if SVGs are enriched in duplicated genes from a particular
+duplication mode.
+
+```{r}
+#| eval: true
+
+# Define helper function to perform ORA for duplication modes
+ora_dupmode <- function(svg_df, dup_df) {
+    
+    df <- HybridExpress::ora(
+        genes = svg_df$gene_id,
+        annotation = as.data.frame(dup_df),
+        background = dup_df$gene,
+        min_setsize = 2,
+        max_setsize = 1e8
+    )
+    
+    return(df)
+}
+
+# Perform overrepresentation analysis for duplication modes
+sp <- names(dup_list)
+ora_svg_dup <- lapply(sp, function(x) {
+    
+    df <- lapply(svgs[[x]], ora_dupmode, dup_list[[x]]$genes) |>
+        bind_rows(.id = "sample") |>
+        mutate(species = x)
+    
+    return(df)
+}) |>
+    bind_rows() |>
+    dplyr::select(species, sample, type = term, genes, all, padj)
+
+ora_svg_dup
+```
+
+Interestingly, SVGs are enriched in SD-derived genes in most of the samples
+and in TRD-derived genes in some samples, revealing an association between 
+these duplication modes and spatial variability in expression. 
+
+Next, let's create a data frame summarizing the frequency of SVGs per 
+duplication mode, highlighting overrepresented results.
+
+```{r}
+#| eval: true
+#| message: false
+
+# Define helper function to get frequency of SVGs per duplication mode
+get_dup_freqs <- function(svg_list, dup_df, ora_df) {
+    
+    freq_df <- lapply(svg_list, function(x) {
+        
+        df <- left_join(x, dup_df, by = c("gene_id" = "gene")) |>
+            drop_na(type) |>
+            mutate(
+                type = factor(
+                    type, 
+                    levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")
+                )
+            ) |>
+            dplyr::count(type, .drop = FALSE) |>
+            as.data.frame()
+        
+        return(df)
+    }) |>
+        bind_rows(.id = "sample") |>
+        left_join(ora_df |> select(sample, type, padj)) |>
+        mutate(
+            symbol = case_when(
+                padj > 0.05 ~ "",
+                padj > 0.01 ~ "*",
+                padj > 0.001 ~ "**",
+                !is.na(padj) ~ "***",
+                TRUE ~ NA_character_
+            )
+        )
+    
+    return(freq_df)
+}
+
+# Get frequency of SVGs per duplication mode
+svg_dupmode_freqs <- lapply(sp, function(x) {
+    
+    df <- get_dup_freqs(svgs[[x]], dup_list[[x]]$genes, ora_svg_dup) |>
+        mutate(species = x)
+    
+    return(df)
+}) |>
+    bind_rows() |>
+    mutate(
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+    ) |>
+    distinct()
+```
+
+Now, let's visualize results as a heatmap with cells colored by scaled
+counts (by duplication mode) and significance asterisks highlighted.
+
+```{r}
+#| eval: true
+#| fig-width: 10
+#| fig-height: 3
+#| fig-dpi: 300
+
+# Create plot
+p_heatmap <- svg_dupmode_freqs |>
+    mutate(
+        species = str_to_title(species),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    ) |>
+    group_by(sample) |>
+    mutate(scaled_n = scale(n, center = FALSE)) |>
+    ungroup() |>
+    # Add code to scale counts by sample
+    ggplot(aes(x = sample, y = type, fill = scaled_n)) +
+    geom_tile(color = "gray90", linewidth = 0.8) +
+    geom_text(aes(label = symbol), color = "gray20", size = 4) +
+    facet_grid(. ~ species, scales = "free_x", space = "free") +
+    scale_fill_gradient(low = "#D6E5F4", high = "#2171B5") +
+    theme_classic() +
+    theme(
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom"
+    ) +
+    labs(
+        title = "Frequency of spatially variable genes by duplication mode",
+        subtitle = "Asterisks indicate significant overrepresentation",
+        x = "Samples", y = NULL, fill = "Scaled counts"
+    )
+
+```
+
+
+## Saving objects {.unnumbered}
+
+Finally, we will save important objects to reuse later.
+
+```{r}
+# Save objects as .rds files ----
+## SVGs
+saveRDS(
+    svgs, compress = "xz",
+    file = here("products", "result_files", "svg_list.rds")
+)
+
+## Data frame with ORA results - duplication mode and SVGs
+saveRDS(
+    ora_svg_dup, compress = "xz",
+    file = here("products", "result_files", "ORA_svg_and_duplication_mode.rds")
+)
+
+## Frequency of SVGs per duplication mode in each sample and species
+saveRDS(
+    svg_dupmode_freqs, compress = "xz",
+    file = here("products", "result_files", "svg_frequency_by_dupmode.rds")
+)
+
+# Save plots ----
+saveRDS(
+    p_sum_combined, compress = "xz",
+    file = here("products", "plots", "total_expression_by_duplication_mode.rds")
+)
+
+saveRDS(
+    p_mean_combined, compress = "xz",
+    file = here("products", "plots", "mean_expression_by_duplication_mode.rds")
+)
+
+saveRDS(
+    p_eb, compress = "xz",
+    file = here("products", "plots", "expression_breadth_by_duplication_mode.rds")
+)
+
+saveRDS(
+    p_heatmap, compress = "xz",
+    file = here("products", "plots", "heatmap_svgs_by_dupmode.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}
