@@ -1,0 +1,656 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Obtaining duplicate genes and gene pairs
+
+In this chapter, we will obtain duplicated gene pairs (classified by 
+duplication mode) in the genomes of each species used in this project. 
+If duplicates are avaiable on doubletroubledb [@almeida2024doubletrouble],
+we will simply download them, otherwise we will infer them *de novo*.
+
+To start, let's load required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(tidyverse)
+library(doubletrouble)
+library(syntenet)
+
+set.seed(123) # for reproducibility
+options(timeout = 1e6)
+
+# Load helper functions
+source(here("code", "utils.R"))
+```
+
+```{r}
+#| echo: false
+gma_kaks <- readRDS(here("products", "result_files", "kaks_gma.rds"))
+zma_kaks <- readRDS(here("products", "result_files", "kaks_zma.rds"))
+pap_kaks <- readRDS(here("products", "result_files", "kaks_pap.rds"))
+ath_kaks <- readRDS(here("products", "result_files", "kaks_ath.rds"))
+```
+
+## Retrieving duplicate pairs
+
+First, we will download duplicate pairs for species that are present
+in doubletroubledb.
+
+```{r}
+# A. thaliana ----
+dup_file <- tempfile(fileext = ".zip")
+download.file(
+    "https://figshare.com/ndownloader/files/44689777",
+    destfile = dup_file
+)
+
+## Genes
+ath_dups <- readr::read_tsv(
+    unzip(dup_file, "arabidopsis_thaliana_genes.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(gene = str_replace_all(gene, "ara_", "")) |>
+    filter(!str_detect(gene, "^ATC|^ATM")) |>
+    as.data.frame()
+
+## Pairs
+ath_pairs <- readr::read_tsv(
+    unzip(dup_file, "arabidopsis_thaliana_pairs.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        dup1 = str_replace_all(dup1, "ara_", ""),
+        dup2 = str_replace_all(dup2, "ara_", "")
+    ) |>
+    filter(!str_detect(dup1, "^ATC|^ATM")) |>
+    filter(!str_detect(dup2, "^ATC|^ATM")) |>
+    as.data.frame()
+    
+# Z. mays ----
+dup_file <- tempfile(fileext = ".zip")
+download.file(
+    "https://figshare.com/ndownloader/files/44690185",
+    destfile = dup_file
+)
+
+## Genes
+zma_dups <- readr::read_tsv(
+    unzip(dup_file, "zea_mays_genes.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(gene = str_replace_all(gene, "zea_", "")) |>
+    as.data.frame()
+
+## Pairs
+zma_pairs <- readr::read_tsv(
+    unzip(dup_file, "zea_mays_pairs.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        dup1 = str_replace_all(dup1, "zea_", ""),
+        dup2 = str_replace_all(dup2, "zea_", "")
+    ) |>
+    as.data.frame()
+    
+# G. max ----
+dup_file <- tempfile(fileext = ".zip")
+download.file(
+    "https://figshare.com/ndownloader/files/44689888",
+    destfile = dup_file
+)
+
+## Genes
+gma_dups <- readr::read_tsv(
+    unzip(dup_file, "glycine_max_genes.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(gene = str_replace_all(gene, "^gly_", "")) |>
+    as.data.frame()
+
+## Pairs
+gma_pairs <- readr::read_tsv(
+    unzip(dup_file, "glycine_max_pairs.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        dup1 = str_replace_all(dup1, "^gly_", ""),
+        dup2 = str_replace_all(dup2, "^gly_", "")
+    ) |>
+    as.data.frame()
+
+
+# H. vulgare ----
+dup_file <- tempfile(fileext = ".zip")
+download.file(
+    "https://figshare.com/ndownloader/files/44689900",
+    destfile = dup_file
+)
+
+## Genes
+hvu_dups <- readr::read_tsv(
+    unzip(dup_file, "hordeum_vulgare_genes.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(gene = str_replace_all(gene, "^hor_", "")) |>
+    as.data.frame()
+
+## Pairs
+hvu_pairs <- readr::read_tsv(
+    unzip(dup_file, "hordeum_vulgare_pairs.tsv.gz"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        dup1 = str_replace_all(dup1, "^hor_", ""),
+        dup2 = str_replace_all(dup2, "^hor_", "")
+    ) |>
+    as.data.frame()
+```
+
+Next, let's identify and classify duplicate pairs *de novo* for 
+the *P. aphrodite* genome using doubletrouble.
+
+```{r}
+# Get sequence and annotation for P. aphrodite and Amborella trichopoda (outgroup)
+## P. aphrodite
+pap_annot <- rtracklayer::import(
+    "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0_gene.gff.gz"
+)
+pap_annot$gene_id <- pap_annot$ID
+
+pap_seq <- Biostrings::readAAStringSet(
+    "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0_protein.fa.gz"
+)
+names(pap_seq) <- gsub(".* gene=", "", names(pap_seq))
+genes <- intersect(names(pap_seq), pap_annot$gene_id[pap_annot$type == "gene"])
+pap_seq <- pap_seq[genes]
+
+## A. trichopoda
+atr_annot <- rtracklayer::import(
+    "http://ftp.ebi.ac.uk/ensemblgenomes/pub/release-57/plants/gff3/amborella_trichopoda/Amborella_trichopoda.AMTR1.0.57.gff3.gz"
+)
+
+atr_seq <- Biostrings::readAAStringSet(
+    "http://ftp.ebi.ac.uk/ensemblgenomes/pub/release-57/plants/fasta/amborella_trichopoda/pep/Amborella_trichopoda.AMTR1.0.pep.all.fa.gz"
+)
+names(atr_seq) <- gsub(" .*", "", gsub(".*gene:", "", names(atr_seq)))
+
+atr_seq <- atr_seq[order(Biostrings::width(atr_seq), decreasing = TRUE), ]
+atr_seq <- atr_seq[!duplicated(names(atr_seq)), ]
+
+# Create seq and annotation lists
+seq <- list(pap = pap_seq, atr = atr_seq)
+annot <- list(pap = pap_annot, atr = atr_annot)
+
+# Process input data
+pdata <- syntenet::process_input(seq, annot, filter_annotation = TRUE)
+
+# Run DIAMOND to get whole paranome
+diamond_intra <- syntenet::run_diamond(
+    seq = pdata$seq["pap"],
+    compare = "intraspecies",
+    threads = 4,
+    ... = "--sensitive"
+)
+
+# Run DIAMOND search between orchid and outgroup
+diamond_inter <- syntenet::run_diamond(
+    seq = pdata$seq,
+    compare = data.frame(query = "pap", outgroup = "atr"),
+    threads = 4,
+    ... = "--sensitive"
+)["pap_atr"]
+
+# Get intron counts
+txdb_list <- lapply(annot, GenomicFeatures::makeTxDbFromGRanges)
+ic <- lapply(txdb_list, get_intron_counts)
+
+# Classify duplicate pairs
+orchid_pairs <- classify_gene_pairs(
+    blast_list = diamond_intra,
+    annotation = pdata$annotation,
+    blast_inter = diamond_inter,
+    intron_counts = ic,
+    scheme = "full",
+    collinearity_dir = here("products", "result_files")
+)[[1]]
+
+orchid_dups <- classify_genes(list(pap = orchid_pairs))[["pap"]]
+
+# Remove species IDs
+pap_pairs <- orchid_pairs |>
+    mutate(
+        dup1 = str_replace_all(dup1, "^pap_", ""),
+        dup2 = str_replace_all(dup2, "^pap_", "")
+    )
+
+pap_dups <- orchid_dups |>
+    mutate(gene = str_replace_all(gene, "^pap_", ""))
+```
+
+## Calculating substitution rates
+
+Next, we will also calculate substitution rates (Ks, Ka, and Ka/Ks) for 
+duplicate pairs using `r BiocStyle::Biocpkg("doubletrouble")`.
+
+```{r}
+# Define function to clean (remove redundancy) in ENSEMBL-derived CDS
+ensembl_longest_isoform <- function(proteome = NULL) {
+
+    pnames <- gsub(".*gene:", "", names(proteome))
+    pnames <- gsub(" .*", "", pnames)
+
+    names(proteome) <- pnames
+    proteome <- proteome[order(Biostrings::width(proteome), decreasing = TRUE),]
+    proteome <- proteome[!duplicated(names(proteome)), ]
+    return(proteome)
+}
+
+# A. thaliana ----
+## Get CDS
+ath_cds <- Biostrings::readDNAStringSet("https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/plants/fasta/arabidopsis_thaliana/cds/Arabidopsis_thaliana.TAIR10.cds.all.fa.gz") |>
+    ensembl_longest_isoform()
+ath_cds <- ath_cds[names(ath_cds) %in% unique(c(ath_pairs$dup1, ath_pairs$dup2))]
+
+## Calculate rates
+ath_kaks <- pairs2kaks(
+    list(Ath = ath_pairs), list(Ath = ath_cds), threads = 4
+)$Ath
+
+# Glycine max ----
+## Get CDS
+gma_cds <- Biostrings::readDNAStringSet("https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/plants/fasta/glycine_max/cds/Glycine_max.Glycine_max_v2.1.cds.all.fa.gz") |>
+    ensembl_longest_isoform()
+gma_cds <- gma_cds[names(gma_cds) %in% unique(c(gma_pairs$dup1, gma_pairs$dup2))]
+
+## Calculate rates
+gma_kaks <- pairs2kaks(
+    gene_pairs_list = list(
+        gma = gma_pairs |>
+            mutate(
+                dup1 = str_c("gma_", dup1), 
+                dup2 = str_c("gma_", dup2),
+            )
+    ),
+    cds = list(gma = gma_cds), 
+    threads = 4
+)$gma
+
+
+# Z. mays ----
+## Get CDS
+zma_cds <- Biostrings::readDNAStringSet("https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/plants/fasta/zea_mays/cds/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.cds.all.fa.gz") |>
+    ensembl_longest_isoform()
+zma_cds <- zma_cds[names(zma_cds) %in% unique(c(zma_pairs$dup1, zma_pairs$dup2))]
+
+## Calculate rates
+zma_kaks <- pairs2kaks(
+    gene_pairs_list = list(
+        zma = zma_pairs |>
+            mutate(
+                dup1 = str_c("zma_", dup1), 
+                dup2 = str_c("zma_", dup2),
+            )
+    ),
+    cds = list(zma = zma_cds), 
+    threads = 2
+)$zma
+
+# H. vulgare ----
+## Get CDS
+hvu_cds <- Biostrings::readDNAStringSet("https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/plants/fasta/hordeum_vulgare/cds/Hordeum_vulgare.MorexV3_pseudomolecules_assembly.cds.all.fa.gz") |>
+    ensembl_longest_isoform()
+hvu_cds <- hvu_cds[names(hvu_cds) %in% unique(c(hvu_pairs$dup1, hvu_pairs$dup2))]
+
+## Calculate rates
+hvu_kaks <- pairs2kaks(
+    gene_pairs_list = list(hvu = hvu_pairs),
+    cds = list(hvu = hvu_cds), 
+    threads = 2
+)$hvu
+
+
+# P. aphrodite ----
+## Get CDS
+pap_cds <- Biostrings::readDNAStringSet(
+    "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0_gene.fa.gz"
+)
+names(pap_cds) <- gsub(".* gene=", "", names(pap_cds))
+names(pap_cds) <- gsub(" .*", "", names(pap_cds))
+pap_cds <- pap_cds[order(Biostrings::width(pap_cds), decreasing = TRUE)]
+pap_cds <- pap_cds[!duplicated(names(pap_cds))]
+
+## Calculate rates
+pap_kaks <- pairs2kaks(
+    gene_pairs_list = list(
+        pap = pap_pairs |>
+            mutate(
+                dup1 = str_c("pap_", dup1), 
+                dup2 = str_c("pap_", dup2),
+            )
+    ),
+    cds = list(pap = pap_cds), 
+    threads = 4
+)$pap
+```
+
+Finally, we will use Ks values to split gene pairs by age groups, so that
+age is not a confounder when performing comparisons between duplication modes.
+Here, we will not use pairs with $K_s>2$ to avoid saturation at greater
+$K_s$ values. Based on previous literature, we will set pre-defined 
+numbers of $K_s$ peaks, which are:
+
+1. *Glycine max*: 2 peaks at $K_s$ ~0.1 and ~0.56.
+2. *Zea mays*: 1 peak at $K_s$ ~0.16.
+3. *Arabidopsis thaliana*: 1 peak at $K_s$ ~0.73.
+4. *Phalaenopsis aphrodite*: 1 peak at $K_s$ ~1.5.
+5. *Hordeum vulgare*: 1 peak at $K_s$ ~0.8.
+
+```{r}
+# First inspection to validate the number of peaks and where they are
+plot_ks_distro(gma_kaks, bytype = TRUE, type_levels = c("SD", "All"))
+plot_ks_distro(zma_kaks, bytype = TRUE, type_levels = c("SD", "All"))
+plot_ks_distro(ath_kaks, bytype = TRUE, type_levels = c("SD", "All"))
+plot_ks_distro(pap_kaks, bytype = TRUE, type_levels = c("SD", "All"))
+
+# Classify gene pairs by age groups
+## G. max - 2 peaks
+gma_peaks <- gma_kaks |>
+    filter(Ks <=2) |>
+    pull(Ks) |>
+    find_ks_peaks(npeaks = 2, max_ks = 1)
+
+gma_spairs <- split_pairs_by_peak(gma_kaks, peaks = gma_peaks) |>
+    purrr::pluck(1) |>
+    dplyr::select(1, 2, type = 6, 7)
+
+## Z. mays - 1 peak
+zma_peaks <- zma_kaks |>
+    filter(Ks <=2) |>
+    pull(Ks) |>
+    find_ks_peaks(npeaks = 1, max_ks = 1)
+
+zma_spairs <- split_pairs_by_peak(zma_kaks, peaks = zma_peaks) |>
+    purrr::pluck(1) |>
+    dplyr::select(1, 2, type = 6, 7)
+
+## A. thaliana - 1 peak
+ath_peaks <- ath_kaks |>
+    filter(Ks <=2) |>
+    pull(Ks) |>
+    find_ks_peaks(npeaks = 1, max_ks = 1.5)
+
+ath_spairs <- split_pairs_by_peak(ath_kaks, peaks = ath_peaks) |>
+    purrr::pluck(1) |>
+    dplyr::select(1, 2, type = 6, 7)
+
+## P. aphrodite
+pap_peaks <- pap_kaks |>
+    filter(Ks <=2, type == "SD") |>
+    pull(Ks) |>
+    find_ks_peaks(npeaks = 1, max_ks = 2)
+
+pap_spairs <- split_pairs_by_peak(pap_kaks, peaks = pap_peaks) |>
+    purrr::pluck(1) |>
+    dplyr::select(1, 2, type = 6, 7)
+
+## H. vulgare - 1 peak
+hvu_peaks <- hvu_kaks |>
+    filter(Ks <=2, type == "SD") |> 
+    pull(Ks) |>
+    find_ks_peaks(npeaks = 1, max_ks = 2)
+
+hvu_spairs <- split_pairs_by_peak(hvu_kaks, peaks = hvu_peaks) |>
+    purrr::pluck(1) |>
+    dplyr::select(1, 2, type = 6, 7)
+
+# Create a single list with all classified duplicates and their age groups
+pairs_byage <- list(
+    ath = ath_spairs,
+    gma = gma_spairs,
+    pap = pap_spairs,
+    zma = zma_spairs,
+    hvu = hvu_spairs
+)
+```
+
+## Obtaining gene family information
+
+We will also obtain gene family assignments for each gene using data
+from PLAZA 5.0 [@van2022plaza]. Let's start with species that are included
+in PLAZA. These are *A. thaliana*, *G. max*, and *Z. mays*.
+
+```{r}
+# Get gene family assignment from PLAZA
+fams_dicots <- read_tsv(
+    "https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/GeneFamilies/genefamily_data.HOMFAM.csv.gz", show_col_types = FALSE, comment = "# "
+)
+
+fams_monocots <- read_tsv(
+    "https://ftp.psb.ugent.be/pub/plaza/plaza_public_monocots_05/GeneFamilies/genefamily_data.HOMFAM.csv.gz", show_col_types = FALSE, comment = "# "
+)
+
+names(fams_dicots) <- c("family", "species", "gene")
+names(fams_monocots) <- c("family", "species", "gene")
+
+# Get gene sets
+sp <- c("ath", "gma", "pap", "zma", "hvu")
+gene_sets <- lapply(sp, function(x) {
+    
+    spe <- readRDS(
+        here("products", "result_files", "spe", paste0("spe_", x, ".rds"))
+    )
+    gs <- lapply(spe, rownames) |> unlist() |> unique()
+    return(gs)
+})
+names(gene_sets) <- sp
+
+# Get assignments for species in PLAZA
+fam_ath <- fams_dicots |> filter(gene %in% gene_sets$ath)
+
+fam_gma <- fams_dicots |>
+    mutate(gene = str_replace_all(gene, "Glyma\\.", "GLYMA_")) |>
+    filter(gene %in% gene_sets$gma)
+
+fam_zma <- fams_monocots |> filter(gene %in% gene_sets$zma)
+```
+
+For *H. vulgare*, the genome assembly on PLAZA is different from the one we're
+using, and the *P. aphrodite* genome is not available on PLAZA. Thus, for
+these two species, we will get gene family assignments using the following
+approach:
+
+1. Perform a DIAMOND search and get the top hit in target species 
+(*H. vulgare* for *H. vulgare*; *Allium sativum* for *P. aphrodite*).
+2. Use the family assignment of top hits.
+
+```{r}
+# 1) Get sequence data ----
+## Query sequences (used in this study)
+query <- list(
+    hvu = Biostrings::readAAStringSet("https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-60/fasta/hordeum_vulgare/pep/Hordeum_vulgare.MorexV3_pseudomolecules_assembly.pep.all.fa.gz"),
+    pap = Biostrings::readAAStringSet("https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0_protein.fa.gz")
+)
+names(query$hvu) <- gsub(".* gene:", "", names(query$hvu))
+names(query$hvu) <- gsub(" .*", "", names(query$hvu))
+names(query$pap) <- gsub(".* gene=", "", names(query$pap))
+
+## Target sequences (from PLAZA)
+target <- list(
+    hvu_target = Biostrings::readAAStringSet("https://ftp.psb.ugent.be/pub/plaza/plaza_public_monocots_05/Fasta/proteome.selected_transcript.hvu.fasta.gz"),
+    pap_target = Biostrings::readAAStringSet("https://ftp.psb.ugent.be/pub/plaza/plaza_public_monocots_05/Fasta/proteome.selected_transcript.asa.fasta.gz")
+)
+names(target$hvu_target) <- gsub(".* | ", "", names(target$hvu_target))
+names(target$pap_target) <- gsub(".* | ", "", names(target$pap_target))
+
+# 2) Perform DIAMOND searches
+compare <- data.frame(
+    query = c("hvu", "pap"), 
+    target = c("hvu_target", "pap_target")
+)
+dmd <- run_diamond(
+    c(query, target), 
+    outdir = file.path(tempdir(), "dmd"),
+    compare = compare
+)
+
+# 3) Get top hits for each query gene
+top_hits <- lapply(dmd, function(x) {
+    
+    df <- x |>
+        group_by(query) |>
+        arrange(evalue) |>
+        slice_head(n = 1) |>
+        ungroup() |>
+        as.data.frame()
+    
+    return(df)
+})
+
+# Create a knee plot to define a similarity threshold (if needed)
+knees <- lapply(top_hits, function(x) {
+    x |>
+        arrange(-perc_identity) |> 
+        mutate(idx = row_number()) |> 
+        ggplot(aes(x = idx, y = perc_identity)) +
+        geom_point() + 
+        scale_y_continuous(breaks = seq(0, 100, by = 10))
+})
+```
+
+Based on knee plots of ECDF for sequence identity, we will define similarity
+cut-offs of 35% for the comparison *pap-asa*, and 90% for *hvu-vhu*. Then,
+we will use the ID of the target gene to get gene family assignments from
+PLAZA.
+
+```{r}
+# Get gene family assignments
+fam_hvu <- top_hits$hvu_hvu_target |>
+    filter(perc_identity >=90) |>
+    select(query, db) |>
+    inner_join(fams_monocots, by = c("db" = "gene")) |>
+    select(family, species, gene = query) |>
+    arrange(family)
+
+fam_pap <- top_hits$pap_pap_target |>
+    filter(perc_identity >=35) |>
+    select(query, db) |>
+    inner_join(fams_monocots, by = c("db" = "gene")) |>
+    select(family, species, gene = query) |>
+    arrange(family) |>
+    mutate(species = "pap")
+```
+
+Now, combining gene-by-family tables in a single object.
+
+```{r}
+gene_fams <- bind_rows(fam_ath, fam_gma, fam_pap, fam_hvu, fam_zma) |>
+    as.data.frame()
+```
+
+## Obtaining functional annotation
+
+Here, we will obtain functional annotations for all genes in each species.
+
+```{r}
+# Get GO annotation for each species
+read_plaza_go <- function(url) {
+    
+    df <- read_tsv(
+        url,
+        show_col_types = FALSE, comment = "# "
+    ) |>
+        dplyr::select(gene = `#gene_id`, term = description)
+    
+    return(df)
+}
+ath_go <- read_plaza_go("https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/GO/go.ath.csv.gz")
+
+gma_go <- read_plaza_go("https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/GO/go.gma.csv.gz") |>
+    mutate(gene = str_replace_all(gene, "Glyma\\.", "GLYMA_"))
+
+zma_go <- read_plaza_go("https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/GO/go.zma.csv.gz")
+
+pap_go <- read_tsv(
+    "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_v1.0_gene_def_GO_KEGG.gz", show_col_types = FALSE
+) |>    
+    dplyr::select(gene = `Gene ID`, term = `GO Names`) |>
+    mutate(term = tidyr::replace_na(term, "None")) |>
+    separate_longer_delim(term, delim = ";") |>
+    mutate(term = str_squish(term))
+
+hvu_go <- read_tsv(here("data", "hvu_biomart.txt"), show_col_types = FALSE) |>
+    dplyr::select(gene = 1, term = `GO term name`) |>
+    mutate(term = tidyr::replace_na(term, "None")) |>
+    dplyr::distinct()
+
+# Get annotation in a list
+functional_annot <- list(
+    Ath = ath_go,
+    Gma = gma_go, 
+    Pap = pap_go,
+    Zma = zma_go,
+    Hvu = hvu_go
+)
+```
+
+## Saving objects to .rds files
+
+Now that we have classified duplicate gene pairs and genes, we will save them
+to separate .rds files for each species. Each .rds file will contain a list
+with elements `pairs` and `genes` containing the duplicate pairs and genes,
+respectively.
+
+```{r}
+# Create a list with duplicate pairs and genes for each species
+dup_list <- list(
+    ath = list(pairs = ath_kaks, genes = ath_dups),
+    gma = list(pairs = gma_kaks, genes = gma_dups),
+    pap = list(pairs = pap_kaks, genes = pap_dups),
+    zma = list(pairs = zma_kaks, genes = zma_dups),
+    hvu = list(pairs = hvu_kaks, genes = hvu_dups)
+)
+
+# Save objects
+## List with dup pairs (+ substitution rates) and genes for each species
+saveRDS(
+    dup_list, compress = "xz",
+    file = here("products", "result_files", "dup_list.rds")
+)
+
+## Duplicate pairs classified by age groups
+saveRDS(
+    pairs_byage, compress = "xz",
+    file = here("products", "result_files", "pairs_by_age_group.rds")
+)
+
+## Gene family assignments
+saveRDS(
+    gene_fams, compress = "xz",
+    file = here("products", "result_files", "gene_families.rds")
+)
+
+## Functional annotation
+saveRDS(
+    functional_annot, compress = "xz",
+    file = here("products", "result_files", "functional_annotation.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}
