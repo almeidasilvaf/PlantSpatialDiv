@@ -1,0 +1,600 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Network-based expression divergence
+
+In this chapter, we will explore how duplicated genes diverge at
+the expression level using gene coexpression networks (GCNs).
+
+We will start by loading the required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+set.seed(123) # for reproducibility
+
+# Load packages
+library(here)
+library(BioNERO)
+library(SpatialExperiment)
+library(SummarizedExperiment)
+library(tidyverse)
+library(patchwork)
+library(exdiva)
+
+# Load helper functions
+source(here("code", "aggregate_spots.R"))
+source(here("code", "utils.R"))
+
+# Plot background
+bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+```
+
+Now, let's load `SpatialExperiment` objects created in chapter 1.
+
+```{r}
+# Load `SpatialExperiment` objects
+ath_spe <- readRDS(here("products", "result_files", "spe", "spe_ath.rds"))
+gma_spe <- readRDS(here("products", "result_files", "spe", "spe_gma.rds"))
+pap_spe <- readRDS(here("products", "result_files", "spe", "spe_pap.rds"))
+zma_spe <- readRDS(here("products", "result_files", "spe", "spe_zma.rds"))
+hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
+hvu_spe <- lapply(hvu_spe, function(x) return(x[, !is.na(x$tissue)]))
+```
+
+And duplicate pairs for each species, classified by age groups, 
+obtained in chapter 2.
+
+```{r}
+# Read duplicated gene pairs for each species
+dup_pairs <- readRDS(here("products", "result_files", "dup_list.rds"))
+
+# Read duplicated gene pairs with age-based group classifications
+pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
+```
+
+```{r}
+#| echo: false
+
+gcns <- readRDS(here("products", "result_files", "gcns_pseudobulk.rds"))
+```
+
+## Inferring gene coexpression networks (GCNs)
+
+We will use `r BiocStyle::Biocpkg("BioNERO")` to infer signed hybrid GCNs 
+using Spearman's $\rho$ as a correlation method. We will infer a single GCN
+for each species by pseudobulking and combining different slides. Let's
+start with this aggregation step.
+
+```{r}
+# Define helper function to pseudobulk and combine count data
+pseudobulk_and_combine <- function(spe_list, domain = "cell_type") {
+    
+    # Create a single matrix with pseudobulk counts for all samples
+    ccounts <- lapply(seq_along(spe_list), function(x) {
+        
+        ag <- counts(scuttle::aggregateAcrossCells(
+            spe_list[[x]], ids = spe_list[[x]][[domain]], statistics = "sum"
+        ))
+        colnames(ag) <- paste0(colnames(ag), "_S", x)
+        ag <- cbind(gene = rownames(ag), as.data.frame(ag))
+        
+        return(ag)
+    })
+    ccounts <- Reduce(function(x, y) merge(x, y, by = "gene", all.x = TRUE), ccounts)
+    ccounts <- ccounts |>
+        tibble::column_to_rownames("gene") |>
+        as.matrix()
+    ccounts[is.na(ccounts)] <- 0
+    
+    # Recreate SpatialExperiment object and get log-norm counts
+    spe <- SpatialExperiment::SpatialExperiment(
+        assays = list(counts = ccounts),
+        colData = data.frame(
+            row.names = colnames(ccounts),
+            domain = gsub("_S.*", "", colnames(ccounts)),
+            slide = gsub(".*_S", "S", colnames(ccounts))
+        )
+    )
+    spe <- scuttle::computeLibraryFactors(spe)
+    spe <- scuttle::logNormCounts(spe)
+    
+    return(spe)
+}
+
+# Get combined pseudobulked counts for each species
+spe_all <- list(
+    Ath = pseudobulk_and_combine(ath_spe, "cell_type"),
+    Gma = pseudobulk_and_combine(gma_spe, "annotation"),
+    Pap = pseudobulk_and_combine(pap_spe, "clusters"),
+    Zma = pseudobulk_and_combine(zma_spe, "cell_type"),
+    Hvu = pseudobulk_and_combine(hvu_spe, "tissue")
+)
+```
+
+Next, we will infer the gene coexpression networks.
+
+```{r}
+#| eval: false
+
+WGCNA::allowWGCNAThreads(nThreads = 16)
+
+# For each species, infer a GCN for each sample based on metaspot aggregation
+gcns <- lapply(spe_all, function(sp) {
+    
+    ## Infer signed hybrid GCN based on Spearman's correlations
+    mat <- as.matrix(assay(sp, "logcounts"))
+    power <- SFT_fit(mat, net_type = "signed hybrid", cor_method = "spearman")
+    gcn <- exp2gcn(
+        mat, net_type = "signed hybrid", SFTpower = power$power,
+        cor_method = "spearman", return_cormat = FALSE, verbose = TRUE
+    )
+    
+    ## Extract hubs
+    hubs <- get_hubs_gcn(mat, gcn)
+    
+    ## Create a list with relevant elements
+    result_list <- list(
+        SFTplot = power$plot,
+        MEs = gcn$MEs,
+        genes_and_modules = gcn$genes_and_modules,
+        k = gcn$kIN,
+        hubs = hubs
+    )
+    
+    return(result_list)
+})
+```
+
+## Duplicate co-occurrence in coexpression modules
+
+Now, for each species, we will count the frequencies of genes in each module
+preservation class identified 
+by `r BiocStyle::Githubpkg("almeidasilvaf/exdiva")`.
+
+```{r}
+# Get module preservation classes with {exdiva}
+sp <- names(gcns)
+mod_comps <- lapply(sp, function(x) {
+    
+    ## Get duplicate pairs and ages for species `x`
+    dup_df <- pairs_age[[tolower(x)]]
+    ## Get comparison classes
+    comps <- compare_coex_modules(dup_df, gcns[[x]]$genes_and_modules)
+    
+    return(comps)
+}) |>
+    purrr::set_names(sp) |>
+    bind_rows(.id = "species")
+```
+
+Next, we will get the proportion of diverged gene pairs (i.e., 'diverged'
+and 'only one' category together), and compare the observed frequency to
+a null distribution of frequencies obtained from 10,000 degree-preserving 
+simulated networks (through node label permutation).
+
+```{r}
+# Get proportion of diverged pairs
+prop_div <- mod_comps |>
+    filter(module_preservation != "both_absent") |>
+    mutate(species_peak = str_c(species, peak, sep = "_")) |>
+    mutate(
+        module_preservation = str_replace_all(
+            module_preservation, "one_absent", "diverged"
+        )
+    ) |>
+    group_by(species_peak, type) |>
+    dplyr::count(module_preservation) |>
+    mutate(prop_div = n / sum(n)) |>
+    ungroup() |>
+    filter(module_preservation == "diverged")
+
+# Get simulated proportions
+sp <- names(gcns)
+prop_sim <- lapply(sp, function(x) {
+    
+    message("Working on ", x)
+    
+    ## Get duplicates and ages
+    dup_df <- pairs_age[[tolower(x)]] 
+    
+    ## Perform node label permutation 10k times and get frequency of diverged pairs
+    sim_prop <- lapply(seq_len(1e4), function(z) {
+        
+        ### Simulate modules
+        sm <- gcns[[x]]$genes_and_modules
+        sm$Genes <- sample(sm$Genes, replace = FALSE)
+        
+        ### Get frequency of diverged pairs in simulated modules
+        sprop <- compare_coex_modules(dup_df, sm) |>
+            filter(module_preservation != "both_absent") |>
+            mutate(species = x) |>
+            mutate(species_peak = str_c(species, peak, sep = "_")) |>
+            mutate(
+                module_preservation = str_replace_all(
+                    module_preservation, "one_absent", "diverged"
+                )
+            ) |>
+            group_by(species_peak, type) |>
+            dplyr::count(module_preservation) |>
+            mutate(prop_div = n / sum(n)) |>
+            ungroup() |>
+            filter(module_preservation == "diverged") |>
+            mutate(sim = z)
+        
+        ### Combine results
+        res_list <- setNames(
+            sprop$prop_div,
+            paste0(sprop$species_peak, "_", sprop$type)
+        )
+
+        return(res_list)
+    }) |> unlist()
+    
+    return(sim_prop)
+})
+names(prop_sim) <- sp
+
+
+# Calculate P-values from null distros
+dnames <- lapply(prop_sim, function(x) names(x) |> unique()) |> unlist()
+observed <- prop_div |>
+    mutate(dnames = str_c(species_peak, type, sep = "_")) |>
+    dplyr::select(dnames, prop_div)
+
+pvals <- lapply(dnames, function(x) {
+    
+    ## Get null distribution and observed value
+    nulls <- prop_sim |> purrr::pluck(gsub("_.*", "", x))
+    nulls <- nulls[names(nulls) == x]
+    obs <- observed |>
+        dplyr::filter(dnames == x) |>
+        dplyr::pull(prop_div)
+    
+    # Compare observed to null and get a P-value
+    p_greater <- mean(nulls >= obs)
+    p_twosided <- mean(abs(nulls - mean(nulls)) >= abs(obs - mean(nulls)))
+    p_less <- mean(nulls <= obs)
+    
+    final_stats <- data.frame(
+        group = x,
+        p_greater = p_greater,
+        p_less = p_less,
+        p_twosided = p_twosided
+    )
+    
+    return(final_stats)
+}) |>
+    bind_rows() |>
+    mutate(
+        signif = case_when(p_greater <0.05 | p_less <0.05 ~ "*", TRUE ~ "")
+    )
+
+pvals$smallest <- names(pvals[, c(2,3)])[apply(pvals[, c(2,3)], 1, which.min)]
+pvals <- pvals |>
+    mutate(
+        slabel = case_when(
+            signif == "*" & smallest == "p_less" ~ "-",
+            signif == "*" & smallest == "p_greater" ~ "+",
+            TRUE ~ ""
+        )
+    )
+```
+
+Next, we will visualize frequencies of diverged duplicates by mode
+for each species.
+
+```{r}
+# Plot frequency of diverged pairs
+pdata <-  prop_div |>
+    mutate(group = str_c(species_peak, type, sep = "_")) |>
+    separate_wider_delim(species_peak, delim = "_", names = c("species", "peak")) |>
+    mutate(
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+    ) |>
+    left_join(pvals, by = "group") |>
+    dplyr::select(species, peak, type, prop_div, slabel) |>
+    mutate(
+        prop = signif(prop_div, 2),
+        lab = case_when(
+            slabel == "" ~ as.character(prop),
+            TRUE ~ paste0(prop, " (", slabel, ")")
+        )
+    ) |>
+    dplyr::select(-prop)
+
+p_diverged_gcn <- pdata |>
+    ggplot(aes(x = prop_div, y = type, fill = type)) +
+    geom_bar(stat = "identity", color = "gray20") +
+    ggh4x::facet_nested(~species + peak, scales = "free_x") +
+    geom_text(aes(x = 0.1, label = lab, color = type), hjust = 0, size = 4) +
+    scale_color_manual(values = c("gray90", rep("gray10", 4), "gray90")) +
+    scale_fill_manual(values = palette.colors()) +
+    theme_classic() +
+    labs(
+        title = "Network-based expression divergence and duplication mode",
+        subtitle = "(-): observed values are smaller than expected",
+        x = "Relative frequency of diverged pairs", y = "Duplication mode"
+    ) +
+    scale_x_continuous(
+        breaks = seq(0, 1, by = 0.5), labels = c(0, 0.5, 1)
+    ) +
+    theme(legend.position = "none")
+
+p_diverged_gcn
+```
+
+The figure shows that, for paralog pairs for which both genes are expressed,
+most pairs diverge in expression, as they are either in different coexpression
+modules or only one gene is expressed. Importantly, despite the high 
+proportions of diverged pairs, some proportions are still lower than the
+expected by chance in degree-preserving simulated networks, indicating
+a significantly higher proportion of preserved pairs. However, there is no
+consistent association between duplication modes and significantly higher
+proportion of preservation across species.
+
+## Distances between module eigengenes
+
+Since the classification system in `exdiva::compare_coex_modules()` is binary
+(i.e., genes in a paralog pair eitheir co-occur or do not co-occur
+in the same module), we will also explore quantitatively how different
+genes in different modules are. For that, we for genes in different modules,
+we will calculate distances between module eigengenes.
+
+```{r}
+# Calculate distances between module eigengenes
+sp <- names(gcns)
+me_dist <- lapply(sp, function(x) {
+    
+    d <- compare_coex_me(
+        mod_comps |> 
+            dplyr::relocate(species, .after = last_col()) |>
+            dplyr::filter(species == x),
+        gcns[[x]]$MEs
+    )
+    
+    return(d)
+    
+}) |>
+    bind_rows() |>
+    mutate(
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    )
+
+# Plot distances
+p_medist <- ggplot(me_dist, aes(x = ME_cor, y = type)) +
+    ggbeeswarm::geom_quasirandom(aes(color = type), alpha = 0.4) +
+    scale_color_manual(values = palette.colors()) +
+    ggh4x::facet_nested(~species + peak) +
+    theme_classic() +
+    theme(
+        panel.background = element_rect(fill = bg),
+        legend.position = "none"
+    ) +
+    scale_x_continuous(
+        limits = c(-1, 1),
+        breaks = seq(-1, 1, by = 0.5), 
+        labels = c(-1, -0.5, 0, 0.5, 1)
+    ) +
+    labs(
+        x = expression("Spearman's" ~ rho ~ "between module eigengenes"),
+        y = NULL,
+        title = "Gene-gene similarities for pairs in different modules",
+        subtitle = "Similarities are measured by correlations between module eigengenes"
+    )
+```
+
+The plot shows that, of the paralog pairs for which genes are in different 
+modules, such different modules are actually not so different, with mostly 
+moderate correlations between module eigengenes. Besides, for some
+species and duplication types, there was no or very few pairs classified
+as 'diverged', but most of the diverged pairs were included in the 'only one'
+category (i.e., only one gene was in the network, also indicating divergence).
+For such category, the correlation between eigengenes would be non-existent,
+since one of the genes is not in any module.
+
+## Node degree and duplication mode
+
+Here, we will test whether genes originating from different duplication
+modes have significantly different degrees.
+
+```{r}
+# Get degree and duplication mode for each gene
+sp <- names(gcns)
+degree_dup <- lapply(sp, function(x) {
+    
+    df <- gcns[[x]]$k |>
+        tibble::rownames_to_column("gene") |>
+        dplyr::select(gene, k = kWithin) |>
+        inner_join(dup_pairs[[tolower(x)]]$gene, by = "gene") |>
+        mutate(species = x)
+    
+    return(df)
+}) |> 
+    bind_rows() |>
+    mutate(
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    )
+
+# Test for significant differences
+degree_clds <- lapply(
+    split(degree_dup, degree_dup$species),
+    cld_kw_dunn,
+    var = "type", value = "k"
+) |>
+    bind_rows(.id = "species") |>
+    inner_join(
+        data.frame(
+            species = c("Ath", "Gma", "Pap", "Zma", "Hvu"),
+            x = c(50, 30, 150, 400, 40)
+        )
+    ) |>
+    mutate(species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))) |>
+    dplyr::rename(type = Group)
+
+# Plot distributions
+p_degree <- ggplot(degree_dup, aes(x = k, y = type)) +
+    geom_violin(aes(fill = type), show.legend = FALSE) +
+    geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+    scale_fill_manual(values = palette.colors()) +
+    geom_label(
+        data = degree_clds,
+        aes(x = x, y = type, label = Letter)
+    ) +
+    facet_wrap(~species, nrow = 1, scales = "free_x") +
+    labs(
+        title = "Degree distributions and gene duplication mode",
+        subtitle = "CLD from Kruskal-Wallis + post-hoc Dunn's test; P <0.05",
+        x = "Intramodular degree", y = NULL
+    ) +
+    theme_classic() +
+    theme(panel.background = element_rect(fill = bg))
+```
+
+The figure shows that genes originating from some duplication modes (e.g.,
+DNA tranposons, tandem, and segmental) tend to have overall higher
+degree. However, there is no universal pattern across species. For instance,
+there are no differences in degree by duplication mode in soybean. Likewise,
+genes originating from tandem duplications have higher degree in orchid flowers
+and barley seeds, but not in other data sets.
+
+Next, we will test if hubs are overrepresented in genes from any
+particular duplication mode.
+
+```{r}
+# Test for associations between hubs and genes from particular dup modes
+## Define helper function to perform ORA for duplication modes
+ora_dupmode <- function(genes, dup_df) {
+    
+    df <- HybridExpress::ora(
+        genes = genes,
+        annotation = as.data.frame(dup_df),
+        background = dup_df$gene,
+        min_setsize = 2,
+        max_setsize = 1e8,
+        alpha = 1 # to get all P-values (and plot)
+    )
+    
+    return(df)
+}
+
+# Perform overrepresentation analysis for duplication modes
+sp <- names(gcns)
+hubs_dup <- lapply(sp, function(x) {
+    
+    df <- ora_dupmode(
+        genes = gcns[[x]]$hubs$Gene, 
+        dup_df = dup_pairs[[tolower(x)]]$genes
+    ) |>
+        mutate(species = x)
+    
+    return(df)
+}) |>
+    bind_rows() |>
+    dplyr::select(species, type = term, genes, all, padj) |>
+    mutate(
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    )
+
+# Plot results
+p_ora_hubs_dup <- hubs_dup |>
+    mutate(
+        logP = -log10(padj),
+        significant = ifelse(padj < 0.05, TRUE, FALSE),
+        symbol = case_when(
+            padj <=0.05 & padj >0.01 ~ "*",
+            padj <=0.01 & padj >0.001 ~ "**",
+            padj <=0.001 ~ "***",
+            TRUE ~ ""
+        )
+    ) |>
+    ggplot(aes(x = genes, y = type)) +
+    geom_point(
+        aes(fill = type, size = logP, alpha = significant), 
+        color = "gray20", pch = 21
+    ) +
+    scale_size(range = c(2, 7)) +
+    scale_alpha_manual(values = c(0.3, 1)) +
+    scale_fill_manual(values = palette.colors()) +
+    geom_text(aes(label = symbol), vjust = -0.3, size = 5) +
+    facet_wrap(~species, nrow = 1) +
+    scale_x_continuous(limits = c(0, 800)) +
+    theme_classic() +
+    theme(
+        panel.background = element_rect(fill = bg)
+    ) +
+    guides(fill = "none", alpha = "none") +
+    labs(
+        title = "Duplication mode of hub genes in coexpression networks",
+        subtitle = "Bright dots with asterisks indicate significant overrepresentation; P <0.05",
+        x = "Number of hub genes", y = NULL,
+        size = expression(-Log[10] ~ italic(P))
+    )
+    
+p_ora_hubs_dup
+```
+
+The figure shows that hubs are enriched in genes originating from
+segmental duplications (in three out of five species) and transposed duplication
+(in one out of five species), suggesting that these duplication mechanisms
+tend to create genes with central roles.
+
+
+## Saving important objects {.unnumbered}
+
+Lastly, we will save important objects and plots to be reused later.
+
+```{r}
+# R objects
+## GCNs from pseudobulk data - one per species
+saveRDS(
+    gcns, compress = "xz", 
+    file = here("products", "result_files", "gcns_pseudobulk.rds")
+)
+
+# Plots
+## Network-based expression divergence and duplication mode (barplot)
+saveRDS(
+    p_diverged_gcn, compress = "xz",
+    file = here("products", "plots", "network_based_divergence.rds")
+)
+
+## Distribution of similarities between eigengenes for diverged pairs
+saveRDS(
+    p_medist, compress = "xz",
+    file = here("products", "plots", "ME_similarities_diverged_pairs.rds")
+)
+
+## Degree distribution and duplication mode
+saveRDS(
+    p_degree, compress = "xz",
+    file = here("products", "plots", "degree_distro_by_duplication_mode.rds")
+)
+
+## GCN hubs and duplication mode
+saveRDS(
+    p_ora_hubs_dup, compress = "xz",
+    file = here("products", "plots", "GCN_hubs_by_duplication_mode.rds")
+)
+```
+
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}
