@@ -217,89 +217,33 @@ plot_cor_violin <- function(
     return(p_violin)
 }
 
-#' Aggregate spots in metaspots by spatial domain
+
+#' Wrapper to compare distributions using Kruskal-Wallis + Dunn
+#'
+#' @param df A data frame with values and variables.
+#' @param var Character, name of column indicating variable levels.
+#' @param value Numeric, values to be used in comparisons.
+#'
+#' @return A data frame with CLD for each level.
+#' @noRd
 #' 
-#' @param spe A `SpatialExperiment` object.
-#' @param spatial_domain Character indicating the name of the colData variable
-#' containing information on spatial domains (or cell types).
-#' @param nspots Numeric indicating how many spots each meta-spot should
-#' have (tentatively). Default: 7.
-#' @param assay Character indicating the name of the assay to use for
-#' aggregation. Default: "counts".
-#' @param add_logcounts Logical indicating whether to add a `logcounts` assay
-#' by computing size factors from aggregated counts and normalizing by
-#' library size with `scater::logNormCounts()`. Default: TRUE.
-#' @param keep_raw Logical indicating whether to keep the assay with raw 
-#' aggregated counts. Default: FALSE.
-#'
-#' @return A `SpatialExperiment` object with aggregated counts.
-#' 
-#' @details
-#' For each spatial domain, this function creates 'meta-spots' by using k-means
-#' clustering with k = total number of spots / `nspots`. Then, counts are
-#' aggregated bu summing the counts in each meta-spot.
-#'
-#'
-aggregate_spots <- function(
-        spe, spatial_domain, nspots = 7, assay = "counts", 
-        add_logcounts = TRUE, keep_raw = FALSE, ...
-) {
+cld_kw_dunn <- function(df, var = "type", value = "csum") {
     
-    # For each spatial domain, get meta spots containing `nspots` spots
-    domains <- as.character(unique(spe[[spatial_domain]]))
-    metaspots_coldata <- Reduce(rbind, lapply(domains, function(x) {
-        
-        fspe <- spe[, spe[[spatial_domain]] == x]
-        
-        # Get metaspot IDs with k-means clustering
-        coords <- spatialCoords(fspe)
-        km <- setNames(rep(1, nrow(coords)), rownames(coords))
-        if(nrow(coords) > nspots) {
-            km <- kmeans(
-                coords, centers = round(nrow(coords) / nspots), ...
-            )$cluster
-        }
-        
-        fspe$metaspot_id <- paste(fspe[[spatial_domain]], km, sep = "_")
-        
-        return(colData(fspe))
-    }))
+    # Perform Kruskal-Wallis test followed by a post-hoc Dunn's test
+    dunn <- FSA::dunnTest(
+        df[[value]] ~ df[[var]], method = "bh"
+    ) |>
+        purrr::pluck("res") |>
+        arrange(Z)
     
-    colData(spe) <- metaspots_coldata
-    
-    # Aggregate counts to metaspots
-    metaspots <- unique(spe$metaspot_id)
-    counts_metaspots <- Reduce(cbind, lapply(metaspots, function(x) {
-        
-        fspe <- spe[, spe$metaspot_id == x]
-        ag_counts <- Matrix::Matrix(
-            rowSums(assay(fspe, assay)),
-            dimnames = list(rownames(fspe), x)
-        )
-        
-        return(ag_counts)
-    }))
-    
-    # Build the `SpatialExperiment` object again
-    coldata <- metaspots_coldata[!duplicated(metaspots_coldata$metaspot_id), ]
-    rownames(coldata) <- coldata$metaspot_id
-    
-    final_spe <- SpatialExperiment::SpatialExperiment(
-        assays = list(counts = counts_metaspots),
-        rowData = rowData(spe),
-        colData = coldata
+    # Get compact letter display (CLD)
+    cld <- rcompanion::cldList(
+        comparison = dunn$Comparison,
+        p.value = dunn$P.adj,
+        threshold = 0.05
     )
     
-    if(add_logcounts) {
-        final_spe <- scater::computeLibraryFactors(final_spe)
-        final_spe <- scater::logNormCounts(final_spe)
-    }
-    
-    if(keep_raw == FALSE) {
-        assay(final_spe, assay) <- NULL
-    }
-    
-    return(final_spe)
+    return(cld)
 }
 
 
