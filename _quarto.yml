@@ -3,17 +3,23 @@ project:
 
 book:
   title: |
-    Code and data for "<paper title>"
+    Code and data for "Gene expression divergence following 
+    gene and genome duplications in spatially resolved 
+    plant transcriptomes"
   author: 
-    - name: Your name
-      orcid: Your ORCID
-  date: "year"
+    - name: Fabricio Almeida-Silva
+      orcid: 0000-0002-5314-2964
+    - name: Yves Van de Peer
+      orcid: 0000-0003-4327-3730
+  date: "March 2025"
   chapters:
     - index.qmd
-    - chapters/chapter_01.qmd
-    - chapters/chapter_02.qmd
-    - chapters/chapter_03.qmd
-    - chapters/appendices.qmd
+    - chapters/01_creating_spe.qmd
+    - chapters/02_obtaining_duplicates_and_rates.qmd
+    - chapters/03_genelevel_analyses.qmd
+    - chapters/04_expression_divergence_correlations.qmd
+    - chapters/05_network-based_expression_divergence.qmd
+    - chapters/06_divergence_classes.qmd
 
 bibliography: bibliography.bib
 
