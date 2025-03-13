@@ -4,3 +4,7 @@
 .Ruserdata
 /.quarto/
 /_book/
+
+/products/result_files/spe/*
+/products/plots/p_spots_one_slide_per_species.rds
+/products/plots/rho_comp_violin.rds
