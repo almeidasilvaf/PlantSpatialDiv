@@ -1,0 +1,337 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Classifying paralogs into divergence classes
+
+Here, we will compare relative expression breadths (i.e.,
+frequency of cell types/spatial domains in which genes in a pair is expressed),
+as in @casneuf2006nonrandom, to assign paralogs to divergence classes.
+
+We will start by loading the required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(SpatialExperiment)
+library(SummarizedExperiment)
+library(tidyverse)
+
+set.seed(123) # for reproducibility
+options(timeout = 1e6) # to download large data files
+
+# Load helper functions
+source(here("code", "utils.R"))
+
+# Plot background
+bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+```
+
+We will also load some required objects created in previous chapters.
+
+```{r}
+# Load `SpatialExperiment` objects
+ath_spe <- readRDS(here("products", "result_files", "spe", "spe_ath.rds"))
+gma_spe <- readRDS(here("products", "result_files", "spe", "spe_gma.rds"))
+pap_spe <- readRDS(here("products", "result_files", "spe", "spe_pap.rds"))
+zma_spe <- readRDS(here("products", "result_files", "spe", "spe_zma.rds"))
+hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
+hvu_spe <- lapply(hvu_spe, function(x) return(x[, !is.na(x$tissue)]))
+
+spe_all <- list(
+    ath = ath_spe,
+    gma = gma_spe,
+    pap = pap_spe,
+    zma = zma_spe, 
+    hvu = hvu_spe
+)
+
+# Read duplicated gene pairs with age-based group classifications
+pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
+```
+
+## Calculating relative expression breadths
+
+Now, we will calculate relative expression breadths. For a gene pair p,
+the relative expression breadth of each gene g will be the number
+of spatial domains in which gene g is expressed, divided by the total number
+of domains in which either one of the genes in pair p is expressed.
+
+```{r}
+# Define helper function to calculate relative expression breadth
+
+#' Calculate relative expression breadth for each gene in each gene pair
+#' 
+#' @param spe A SpatialExperiment object.
+#' @param pairs 
+#' @param cell_type Character, name of the column with cell type information.
+#' @param min_prop Numeric, minimum proportion of non-zero spots to classify
+#' gene as detected. Default: 0.01.
+#' 
+#' @return A data as in \strong{pairs}, but with two extra variables 
+#' named \strong{reb1}, \strong{reb2}.
+#'
+calculate_reb <- function(spe, pairs, cell_type = "cell_type", min_prop = 0.01) {
+    
+    # Get cell types in which each gene is detected
+    prop_detected <- scuttle::aggregateAcrossCells(
+        spe, statistics = "prop.detected",
+        ids = spe[[cell_type]]
+    ) |>
+        assay()
+    
+    detected <- apply(prop_detected, 1, function(x) {
+        return(names(x[x >= min_prop]))
+    })
+
+    # Calculate relative expression breadth for each gene in each pair
+    rebs <- Reduce(rbind, lapply(seq_len(nrow(pairs)), function(x) {
+        
+        ct1 <- detected[[pairs$dup1[x]]]
+        ct2 <- detected[[pairs$dup2[x]]]
+        
+        n <- length(union(ct1, ct2))
+        eb_df <- data.frame(
+            reb1 = length(ct1) / n, 
+            reb2 = length(ct2) / n
+        )
+        
+        return(eb_df)
+    }))
+    
+    final_pairs <- cbind(pairs, rebs)
+    
+    return(final_pairs)
+}
+
+# For each gene of a duplicate pair, calculate relative expression breadth
+rebs <- list(
+    Ath = lapply(spe_all$ath, calculate_reb, pairs = pairs_age$ath) |> 
+        bind_rows(.id = "sample"),
+    Gma = lapply(spe_all$gma, calculate_reb, pairs = pairs_age$gma, cell_type = "annotation") |>
+        bind_rows(.id = "sample"),
+    Pap = lapply(spe_all$pap, calculate_reb, pairs = pairs_age$pap, cell_type = "clusters") |>
+        bind_rows(.id = "sample"),
+    Zma = lapply(spe_all$zma, calculate_reb, pairs = pairs_age$zma, cell_type = "cell_type") |>
+        bind_rows(.id = "sample"),
+    Hvu = lapply(spe_all$hvu, calculate_reb, pairs = pairs_age$hvu, cell_type = "tissue") |>
+        bind_rows(.id = "sample")
+)
+rebs <- bind_rows(rebs, .id = "species")
+
+# Get mean reb for each gene in a pair across samples
+mean_rebs <- rebs |>
+    mutate(pair = str_c(dup1, dup2, sep = "_")) |>
+    group_by(pair) |>
+    mutate(
+        mean_reb1 = mean(reb1, na.rm = TRUE),
+        mean_reb2 = mean(reb2, na.rm = TRUE)
+    ) |>
+    ungroup() |>
+    dplyr::select(-c(sample, reb1, reb2)) |>
+    distinct() |>
+    dplyr::select(-pair) |>
+    mutate(
+        species_peak = str_c(species, peak, sep = " - peak "),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
+        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+    )
+```
+
+Next, we will visualize relative expression breadths for each gene pair by
+duplication mode using smoothed density representations of scatterplots.
+
+```{r}
+# Plot smoother density representations of scatterplots
+p_mean_reb <- ggplot(mean_rebs, aes(x = mean_reb1, y = mean_reb2)) +
+    stat_density_2d(
+        geom = "raster",
+        aes(fill = after_stat(density)),
+        contour = FALSE
+    ) +
+    scale_fill_gradient(low = "#F7FBFF", high = "#08519C") +
+    ggh4x::facet_nested(
+        cols = vars(type),
+        rows = vars(species, peak)
+    ) +
+    scale_x_continuous(
+        limits = c(0, 1), breaks = seq(0, 1, 0.5), labels = c(0, 0.5, 1), expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+        limits = c(0, 1), breaks = seq(0, 1, 0.5), labels = c(0, 0.5, 1), expand = c(0, 0)
+    ) +
+    theme_classic() +
+    theme(panel.spacing = unit(0.2, "cm")) +
+    labs(
+        x = "REB of gene 1", y = "REB of gene 2", fill = "Density",
+        title = "Relative expression breadth of paralogs",
+        subtitle = "Scatterplots are represented by their smoothed densities"
+    )
+```
+
+The figure shows that most duplicates diverge asymmetrically. However, for
+some species (e.g., orchid and maize), a large fraction of segmental 
+duplicates display redundancy at the expression level.
+
+## Comparing relative expression breadth by mode
+
+Next, we will classify gene pairs in three classes based on their
+relative expression breadths, and then compare the number of genes in each
+class by duplication mode. The classes and their definitions are:
+
+1. **Redundancy:** both pairs with REB >0.70.
+2. **Assymetric divergence:** one gene with REB >0.7, and the other gene
+with REB <0.3.
+3. **Symmetric divergence:** both genes with REB between 0.3 and 0.7.
+
+We will with the classification per se.
+
+```{r}
+# Classify pairs based on REB
+reb_classes <- mean_rebs |>
+    filter(
+        !is.nan(mean_reb1), 
+        !is.na(mean_reb1), 
+        !is.nan(mean_reb2), 
+        !is.na(mean_reb2) 
+    ) |>
+    mutate(
+        class = case_when(
+            mean_reb1 >0.7 & mean_reb2 >0.7 ~ "Redundancy",
+            mean_reb1 >0.7 & mean_reb2 <0.3 ~ "Asymmetric",
+            mean_reb2 >0.7 & mean_reb1 <0.3 ~ "Asymmetric",
+            mean_reb1 >0.3 & mean_reb1 <0.7 &
+                mean_reb2 > 0.3 & mean_reb2 <0.7 ~ "Symmetric",
+            TRUE ~ "Undefined"
+        )
+    ) |>
+    filter(class != "Undefined") |>
+    as.data.frame()
+```
+
+Then, we will test for significant associations between each class
+and duplication modes.
+
+```{r}
+# Test for overrepresentation of REB classes in duplicates from each dup mode
+reb_classes_split <- split(reb_classes, reb_classes$species_peak)
+ora_dupmode_class <- lapply(reb_classes_split, function(x) {
+    
+    # Get list of all duplicate pairs
+    dups <- x |>
+        mutate(pair = str_c(dup1, dup2, sep = "_")) |>
+        select(pair, type)
+    
+    # Get a list of genes for each class
+    classes_list <- x |>
+        mutate(pair = str_c(dup1, dup2, sep = "_")) |>
+        select(pair, class)
+    classes_list <- split(classes_list, classes_list$class)
+    
+    # Perform ORA
+    ora_dfs <- lapply(classes_list, function(y) {
+        
+        df <- HybridExpress::ora(
+            genes = unique(y$pair),
+            annotation = dups,
+            background = dups$pair,
+            min_setsize = 2,
+            max_setsize = 1e8,
+            alpha = 1
+        )
+        
+        return(df)
+    }) |>
+        bind_rows(.id = "class")
+    
+    return(ora_dfs)
+}) |>
+    bind_rows(.id = "species_peak")
+```
+
+Next, we will plot the frequencies of duplicates in each class by mode.
+
+```{r}
+# Plot frequency of duplicates (by mode) in each class
+p_reb_classes <- ora_dupmode_class |>
+    mutate(
+        genes = log10(genes + 1),
+        symbol = case_when(
+            padj > 0.05 ~ "",
+            padj > 0.01 ~ "*",
+            padj > 0.001 ~ "**",
+            !is.na(padj) ~ "***",
+            TRUE ~ NA_character_
+        ),
+        peak = str_replace_all(species_peak, ".* - peak ", ""),
+        species = str_replace_all(species_peak, " - .*", ""),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
+        term = factor(term, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        class = factor(class, levels = c("Redundancy", "Symmetric", "Asymmetric"))
+    ) |>
+    ggplot(aes(x = term, y = class)) +
+    geom_tile(aes(fill = genes)) +
+    scale_fill_gradient(low = "#E5F5E0", high = "#006D2C") +
+    geom_text(aes(label = symbol)) +
+    ggh4x::facet_nested(
+        cols = vars(species, peak)
+    ) +
+    theme_classic() +
+    labs(
+        title = "Expression divergence pattern and duplication mode",
+        subtitle = "Asterisks indicate significant overrepresentation; P <0.05",
+        x = "Duplication mode", y = "Divergence class",
+        fill = expression(Log[10] ~ N)
+    ) +
+    theme(legend.position = "bottom")
+```
+
+The figure shows that most pairs derived from small-scale duplications (TD, PD,
+TRD, and DD) are overrepresented in pairs with asymmetric divergence. Segmental
+duplicates (and sometimes transposed duplicates) are mostly overrepresented
+in pairs that display redundancy and symmetric divergence.
+
+## Saving objects {.unnumbered}
+
+Finally, we will save important objects to reuse later.
+
+```{r}
+#| eval: false
+
+# Objects
+## Relative expression breadths
+saveRDS(
+    rebs, compress = "xz",
+    file = here("products", "result_files", "relative_expression_breadth.rds")
+)
+
+# Plots
+## Smoothed densities of relative expression breadths
+saveRDS(
+    p_mean_reb, compress = "xz",
+    file = here("products", "plots", "smoothed_densities_relative_expression_breadth.rds")
+)
+
+## ORA - duplication mode and divergence classes
+saveRDS(
+    p_reb_classes, compress = "xz",
+    file = here("products", "plots", "ORA_dupmode_and_divergence_class.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}

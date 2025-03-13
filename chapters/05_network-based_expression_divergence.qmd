@@ -538,15 +538,12 @@ p_ora_hubs_dup <- hubs_dup |>
         x = "Number of hub genes", y = NULL,
         size = expression(-Log[10] ~ italic(P))
     )
-    
-p_ora_hubs_dup
 ```
 
 The figure shows that hubs are enriched in genes originating from
 segmental duplications (in three out of five species) and transposed duplication
 (in one out of five species), suggesting that these duplication mechanisms
 tend to create genes with central roles.
-
 
 ## Saving important objects {.unnumbered}
 
@@ -585,7 +582,6 @@ saveRDS(
     file = here("products", "plots", "GCN_hubs_by_duplication_mode.rds")
 )
 ```
-
 
 ## Session info {.unnumbered}
 

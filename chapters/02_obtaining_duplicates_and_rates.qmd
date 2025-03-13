@@ -600,7 +600,7 @@ functional_annot <- list(
 )
 ```
 
-## Saving objects to .rds files
+## Saving objects
 
 Now that we have classified duplicate gene pairs and genes, we will save them
 to separate .rds files for each species. Each .rds file will contain a list

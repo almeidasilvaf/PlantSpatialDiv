@@ -51,14 +51,12 @@ hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
 We will also need the duplicate pairs and genes obtained in chapter 2.
 
 ```{r}
-#| eval: true
 
 # Load duplicate pairs and genes
 dup_list <- readRDS(here("products", "result_files", "dup_list.rds"))
 ```
 
 ```{r}
-#| eval: true
 #| echo: false
 
 # Load data that were generated in this document to avoid long runtimes
@@ -425,7 +423,6 @@ Now, we will test if SVGs are enriched in duplicated genes from a particular
 duplication mode.
 
 ```{r}
-#| eval: true
 
 # Define helper function to perform ORA for duplication modes
 ora_dupmode <- function(svg_df, dup_df) {
@@ -453,8 +450,6 @@ ora_svg_dup <- lapply(sp, function(x) {
 }) |>
     bind_rows() |>
     dplyr::select(species, sample, type = term, genes, all, padj)
-
-ora_svg_dup
 ```
 
 Interestingly, SVGs are enriched in SD-derived genes in most of the samples
@@ -465,7 +460,6 @@ Next, let's create a data frame summarizing the frequency of SVGs per
 duplication mode, highlighting overrepresented results.
 
 ```{r}
-#| eval: true
 #| message: false
 
 # Define helper function to get frequency of SVGs per duplication mode
@@ -520,7 +514,6 @@ Now, let's visualize results as a heatmap with cells colored by scaled
 counts (by duplication mode) and significance asterisks highlighted.
 
 ```{r}
-#| eval: true
 #| fig-width: 10
 #| fig-height: 3
 #| fig-dpi: 300
@@ -551,7 +544,6 @@ p_heatmap <- svg_dupmode_freqs |>
         subtitle = "Asterisks indicate significant overrepresentation",
         x = "Samples", y = NULL, fill = "Scaled counts"
     )
-
 ```
 
 

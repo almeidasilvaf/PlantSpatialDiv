@@ -24,7 +24,6 @@ library(SpatialExperiment)
 library(SummarizedExperiment)
 library(patchwork)
 library(exdiva)
-library(mgcv)
 
 set.seed(123) # for reproducibility
 
@@ -70,7 +69,6 @@ go_annot <- readRDS(here("products", "result_files", "functional_annotation.rds"
 ```
 
 ```{r}
-#| eval: true
 #| echo: false
 
 # Load objects created in this document to be able to create figures
@@ -608,8 +606,6 @@ p_preserved <- ggplot(
         x = "Samples", y = "Relative frequency", 
         fill = "Mode"
     )
-
-p_preserved
 ```
 
 The figure shows that the sets of duplicate pairs with preserved expression
@@ -765,7 +761,7 @@ model_comp <- lapply(sp, function(x) {
 ```
 
 Model selection metrics indicate that a log-log regression outperforms
-a simple linear regression, indicating that the two variables (Ks and 
+a simple linear regression, indicating that the two variables ($K_s$ and 
 correlations) are exponentially associated. Let's visualize such relationships.
 
 ```{r}
@@ -845,10 +841,10 @@ p_rho_ks_final <- wrap_plots(
 
 Overall, the figure shows that expression divergence increases (i.e.,
 paralogous pairs become more different in expression profiles) over time. 
-However, a positive slope ($\beta_1$) can be observed for retrotransposed
+A positive slope ($\beta_1$) can be observed for retrotransposed
 duplicates in four out of five species (except for *Z. mays*), suggesting
 that older duplicates tend to have more similar expression profiles for
-this duplication mode. It is noteworthy that the number of retrotransposed
+this duplication mode. However, the number of retrotransposed
 duplicates is much smaller than the number of duplicates originating from
 all other mechanisms.
 
@@ -1015,12 +1011,6 @@ saveRDS(
 saveRDS(
     comp_metaspots, compress = "xz",
     file = here("products", "result_files", "rho_comp_metaspots.rds")
-)
-
-## List with coexpression networks (no edge lists) for each sample-species
-saveRDS(
-    gcns, compress = "xz",
-    file = here("products", "result_files", "gcns.rds")
 )
 
 # Duplicate pairs with significantly preserved gene expression
