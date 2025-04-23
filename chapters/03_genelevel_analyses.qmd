@@ -51,7 +51,6 @@ hvu_spe <- readRDS(here("products", "result_files", "spe", "spe_hvu.rds"))
 We will also need the duplicate pairs and genes obtained in chapter 2.
 
 ```{r}
-
 # Load duplicate pairs and genes
 dup_list <- readRDS(here("products", "result_files", "dup_list.rds"))
 ```
@@ -61,6 +60,17 @@ dup_list <- readRDS(here("products", "result_files", "dup_list.rds"))
 
 # Load data that were generated in this document to avoid long runtimes
 svgs <- readRDS(here("products", "result_files", "svg_list.rds"))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+
+# Load pre-computed plots to display after they are created
+f <- list.files(here("products", "plots"), full.names = TRUE)
+f <- f[!grepl("one_slide_per", f)]
+plots <- lapply(f, readRDS)
+names(plots) <- gsub("\\.rds", "", basename(f))
 ```
 
 ## Expression levels of duplicated genes
@@ -253,6 +263,16 @@ p_mean_combined <- ggplot(mean_combined, aes(x = cmean, y = type)) +
     theme(panel.background = element_rect(fill = bg))
 ```
 
+```{r}
+#| eval: true
+#| echo: false
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$mean_expression_by_duplication_mode
+```
+
 The figures show that, overall, segmental, tandem, and proximal duplicates 
 display higher expression levels compared to duplicated originating from other 
 duplication modes, especially dispersed duplicates. In germinating
@@ -372,6 +392,16 @@ p_eb <- ggplot(eb, aes(x = n, y = type)) +
     )
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$expression_breadth_by_duplication_mode
+```
+
 The figure shows that
 there are significant differences in expression breadth depending on how
 genes were duplicated. Importantly, as we observed for expression levels,
@@ -423,7 +453,6 @@ Now, we will test if SVGs are enriched in duplicated genes from a particular
 duplication mode.
 
 ```{r}
-
 # Define helper function to perform ORA for duplication modes
 ora_dupmode <- function(svg_df, dup_df) {
     
@@ -514,10 +543,6 @@ Now, let's visualize results as a heatmap with cells colored by scaled
 counts (by duplication mode) and significance asterisks highlighted.
 
 ```{r}
-#| fig-width: 10
-#| fig-height: 3
-#| fig-dpi: 300
-
 # Create plot
 p_heatmap <- svg_dupmode_freqs |>
     mutate(
@@ -544,6 +569,16 @@ p_heatmap <- svg_dupmode_freqs |>
         subtitle = "Asterisks indicate significant overrepresentation",
         x = "Samples", y = NULL, fill = "Scaled counts"
     )
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 10
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$heatmap_svgs_by_dupmode
 ```
 
 

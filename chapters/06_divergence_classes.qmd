@@ -55,6 +55,17 @@ spe_all <- list(
 pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+
+# Load pre-computed plots to display after they are created
+f <- list.files(here("products", "plots"), full.names = TRUE)
+f <- f[!grepl("one_slide_per", f)]
+plots <- lapply(f, readRDS)
+names(plots) <- gsub("\\.rds", "", basename(f))
+```
+
 ## Calculating relative expression breadths
 
 Now, we will calculate relative expression breadths. For a gene pair p,
@@ -172,6 +183,18 @@ p_mean_reb <- ggplot(mean_rebs, aes(x = mean_reb1, y = mean_reb2)) +
         title = "Relative expression breadth of paralogs",
         subtitle = "Scatterplots are represented by their smoothed densities"
     )
+
+p_mean_reb
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 7
+#| fig-height: 5
+#| fig-dpi: 300
+
+plots$smoothed_densities_relative_expression_breadth
 ```
 
 The figure shows that most duplicates diverge asymmetrically. However, for
@@ -288,7 +311,22 @@ p_reb_classes <- ora_dupmode_class |>
         x = "Duplication mode", y = "Divergence class",
         fill = expression(Log[10] ~ N)
     ) +
-    theme(legend.position = "bottom")
+    theme(
+        legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1)
+    )
+
+p_reb_classes
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+
+plots$ORA_dupmode_and_divergence_class +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 The figure shows that most pairs derived from small-scale duplications (TD, PD,

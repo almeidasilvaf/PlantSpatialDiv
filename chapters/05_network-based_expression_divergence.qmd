@@ -64,6 +64,17 @@ pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
 gcns <- readRDS(here("products", "result_files", "gcns_pseudobulk.rds"))
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+
+# Load pre-computed plots to display after they are created
+f <- list.files(here("products", "plots"), full.names = TRUE)
+f <- f[!grepl("one_slide_per", f)]
+plots <- lapply(f, readRDS)
+names(plots) <- gsub("\\.rds", "", basename(f))
+```
+
 ## Inferring gene coexpression networks (GCNs)
 
 We will use `r BiocStyle::Biocpkg("BioNERO")` to infer signed hybrid GCNs 
@@ -329,6 +340,16 @@ p_diverged_gcn <- pdata |>
 p_diverged_gcn
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$network_based_divergence
+```
+
 The figure shows that, for paralog pairs for which both genes are expressed,
 most pairs diverge in expression, as they are either in different coexpression
 modules or only one gene is expressed. Importantly, despite the high 
@@ -388,6 +409,18 @@ p_medist <- ggplot(me_dist, aes(x = ME_cor, y = type)) +
         title = "Gene-gene similarities for pairs in different modules",
         subtitle = "Similarities are measured by correlations between module eigengenes"
     )
+
+p_medist
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 4
+#| fig-dpi: 300
+
+plots$ME_similarities_diverged_pairs
 ```
 
 The plot shows that, of the paralog pairs for which genes are in different 
@@ -456,6 +489,18 @@ p_degree <- ggplot(degree_dup, aes(x = k, y = type)) +
     ) +
     theme_classic() +
     theme(panel.background = element_rect(fill = bg))
+
+p_degree
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 4
+#| fig-dpi: 300
+
+plots$degree_distro_by_duplication_mode
 ```
 
 The figure shows that genes originating from some duplication modes (e.g.,
@@ -538,6 +583,18 @@ p_ora_hubs_dup <- hubs_dup |>
         x = "Number of hub genes", y = NULL,
         size = expression(-Log[10] ~ italic(P))
     )
+
+p_ora_hubs_dup
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$GCN_hubs_by_duplication_mode
 ```
 
 The figure shows that hubs are enriched in genes originating from

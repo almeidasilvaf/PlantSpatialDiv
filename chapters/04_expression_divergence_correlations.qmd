@@ -77,6 +77,17 @@ rho_metaspots <- readRDS(
 )
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+
+# Load pre-computed plots to display after they are created
+f <- list.files(here("products", "plots"), full.names = TRUE)
+f <- f[!grepl("one_slide_per", f)]
+plots <- lapply(f, readRDS)
+names(plots) <- gsub("\\.rds", "", basename(f))
+```
+
 ## Handling sparsity: aggregating counts in `SpatialExperiment` objects
 
 As demonstrated by @morabito2023hdwgcna, it is nearly impossible
@@ -193,6 +204,16 @@ p_simcor <- sim_cor |>
     )
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 4
+#| fig-dpi: 300
+
+plots$simulation_rho_metaspots
+```
+
 The plot shows that metaspots comprised of 30 spots can sufficiently 
 reduce the amount of noise in gene-gene correlations arising from sparsity.
 Thus, we will now create `SpatialExperiment` objects at the metaspot-level
@@ -298,11 +319,10 @@ comp_metaspots <- bind_rows(
 ) 
 ```
 
-Now, we will visualize results with violin plots (one for each sample), and
-with a summary heatmap showing CLDs for all samples.
+Now, we will visualize results with a heatmap showing CLDs for all samples.
 
 ```{r}
-# Plot 1): Heatmap with CLDs ----
+# Plot heatmap with CLDs
 p_heatmap_rho <- comp_metaspots |>
     mutate(
         Group = factor(
@@ -328,61 +348,17 @@ p_heatmap_rho <- comp_metaspots |>
     ) +
     ggsci::scale_fill_npg()
 
+p_heatmap_rho
+```
 
-# Plot 2): Violin plots with correlations distros
-pdata_cor <- c(
-    split(rho_metaspots_age$ath, rho_metaspots_age$ath$sample),
-    split(rho_metaspots_age$gma, rho_metaspots_age$gma$sample),
-    split(rho_metaspots_age$pap, rho_metaspots_age$pap$sample),
-    split(rho_metaspots_age$zma, rho_metaspots_age$zma$sample),
-    split(rho_metaspots_age$hvu, rho_metaspots_age$hvu$sample)
-)
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 9
+#| fig-height: 3
+#| fig-dpi: 300
 
-p_violin_rho <- lapply(pdata_cor, function(x) {
-    
-    # Plot data 1) - correlations
-    data_cor <- x |>
-        filter(!is.na(cor)) |>
-        select(cor, peak, type, sample) |>
-        mutate(
-            type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
-        )
-    
-    # Plot data 2) - CLDs
-    sample_id <- data_cor$sample[1]
-    peak <- data_cor$peak[1]
-    
-    data_cld <- comp_metaspots |>
-        filter(sample == sample_id, peak == peak)
-    
-    # Create plot
-    p_violin <- data_cor |>
-        ggplot(aes(x = type, y = cor)) +
-        geom_violin(aes(fill = type), alpha = 0.7) +
-        scale_fill_manual(values = palette.colors()) +
-        geom_boxplot(width = 0.2) +
-        geom_text(
-            data = data_cld,
-            aes(x = Group, y = 1.2, label = Letter)
-        ) +
-        facet_wrap(~peak) +
-        scale_y_continuous(
-            limits = c(-1, 1.5), 
-            breaks = seq(-1, 1, by = 0.5), 
-            labels = seq(-1, 1, by = 0.5)
-        ) +
-        theme_classic() +
-        theme(
-            panel.background = element_rect(fill = bg),
-            legend.position = "none"
-        ) +
-        labs(
-            x = "Duplication mode", y = expression("Spearman's" ~ rho),
-            title = "Correlations between duplicates per duplication mode"
-        )
-    
-    return(p_violin)
-})
+plots$rho_comp_heatmap
 ```
 
 The heatmap shows that differences in expression divergence by duplication modes
@@ -447,6 +423,16 @@ p_zrho_mean <- ggplot(zrho_mean, aes(x = mean_cor, y = type)) +
     scale_x_continuous(limits = c(-0.5, 1)) +
     theme_classic() +
     theme(panel.background = element_rect(fill = bg))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$mean_zrho_comp
 ```
 
 The figure shows that differences in gene-gene correlations by duplication mode
@@ -606,6 +592,18 @@ p_preserved <- ggplot(
         x = "Samples", y = "Relative frequency", 
         fill = "Mode"
     )
+
+p_preserved
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 9
+#| fig-height: 4
+#| fig-dpi: 300
+
+plots$pairs_preserved_expression_relfreq
 ```
 
 The figure shows that the sets of duplicate pairs with preserved expression
@@ -672,6 +670,18 @@ p_corvar <- cor_var |>
         subtitle = "Spearman's correlations were transformed with Fisher's z-transformation",
         x = "Estimate", y = "Species"
     )
+
+p_corvar
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 7
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$rho_variation_across_samples
 ```
 
 The figure shows that correlations for the same pairs across different samples
@@ -757,7 +767,6 @@ model_comp <- lapply(sp, function(x) {
         return(result)
     }))
 }) |> bind_rows()
-
 ```
 
 Model selection metrics indicate that a log-log regression outperforms
@@ -837,6 +846,18 @@ p_rho_ks_final <- wrap_plots(
     theme(
         plot.subtitle = element_text(face = "italic")
     )
+
+p_rho_ks_final
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 9
+#| fig-height: 8
+#| fig-dpi: 300
+
+plots$expression_divergence_over_time
 ```
 
 Overall, the figure shows that expression divergence increases (i.e.,
@@ -904,6 +925,18 @@ p_zrho_fam <- fams_ranked |>
         x = "Ranked gene families",
         y = expression("IQR of Fisher's z-transformed" ~ rho)
     )
+
+p_zrho_fam
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 3
+#| fig-dpi: 300
+
+plots$IQR_rho_per_gene_family
 ```
 
 The figure shows that expression divergence varies by gene family.
@@ -1030,11 +1063,6 @@ saveRDS(
 saveRDS(
     p_heatmap_rho, compress = "xz",
     file = here("products", "plots", "rho_comp_heatmap.rds")
-)
-
-saveRDS(
-    p_violin_rho, compress = "xz",
-    file = here("products", "plots", "rho_comp_violin.rds")
 )
 
 ## Distribution of mean Fisher's Z-transformed \rho estimates 

@@ -23,6 +23,9 @@ obtained four samples from developing maize ear primordia.
 4. Soybean nodules [@liu2023integrated]. In this study, authors
 obtained a sample from soybean nodules
 
+5. Germinating barley seeds [@peirats2023spatially]. In this study, authors
+obtained 20 samples from barley seeds at different stages of germination.
+
 To start, let's load required packages.
 
 ```{r here}
@@ -623,7 +626,21 @@ p_spestats <- spe_stats |>
         x = "Absolute frequency",
         y = "Species"
     )
+
+p_spestats
 ```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 7
+#| fig-height: 3
+#| fig-dpi: 300
+p_spestats <- readRDS(here("products", "plots", "p_spe_summary_stats.rds"))
+
+p_spestats
+```
+
 
 ### Spots and domains
 
@@ -683,6 +700,19 @@ p_spot_species <- wrap_plots(
 p_spot_species
 ```
 
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 5
+#| fig-height: 5
+#| fig-dpi: 300
+
+p_spot_species <- readRDS(
+    here("products", "plots", "p_spots_one_slide_per_species.rds")
+)
+
+p_spot_species
+```
 
 ## Saving objects
 
