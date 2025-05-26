@@ -251,8 +251,29 @@ ggsave(
     file = here("products", "figs", "Sup_Figure_01.pdf")
 )
 
+# Fig. S2: gene-gene correlations for increasingly large metaspots ----
+## Create figure
+sf2 <- plots$simulation_rho_metaspots
 
-# PDF to PNG ----
+## Save to file
+ggsave(
+    sf2, width = 9, height = 5,
+    file = here("products", "figs", "Sup_Figure_02.pdf")
+)
+
+# Fig. S3: dissimilarity between module eigengenes ----
+## Create figure
+sf3 <- plots$ME_similarities_diverged_pairs
+
+## Save to file
+ggsave(
+    sf3, width = 8, height = 4,
+    file = here("products", "figs", "Sup_Figure_03.pdf")
+)
+
+
+
+# PDF to PNG ---------------------------------------------
 pdf_files <- list.files(
     here("products", "figs"), pattern = ".pdf", full.names = TRUE
 )
