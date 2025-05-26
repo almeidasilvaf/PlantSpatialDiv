@@ -1,0 +1,531 @@
+term	genes	all	pval	padj	category	species
+acidic amino acid transport	3	5	3.5599987462181103e-4	0.04783056093252154	highcor	Ath
+amino acid activation	5	13	4.26132336055772e-5	0.01030558441517279	highcor	Ath
+aminoacyl-tRNA ligase activity	5	14	6.446844956329777e-5	0.014436157261470307	highcor	Ath
+chlorophyll binding	15	16	9.129510591947996e-22	1.3799255259729396e-18	highcor	Ath
+chromosome condensation	3	4	1.4604031627453256e-4	0.02386377708637362	highcor	Ath
+coenzyme A biosynthetic process	3	5	3.5599987462181103e-4	0.04783056093252154	highcor	Ath
+cold acclimation	7	35	1.34914040564491e-4	0.02386377708637362	highcor	Ath
+cysteine dioxygenase activity	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+detection of hypoxia	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+DNA demethylase activity	3	4	1.4604031627453256e-4	0.02386377708637362	highcor	Ath
+double-stranded RNA-specific ribonuclease activity	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+enzyme activator activity	11	85	1.204163307837859e-4	0.02348506890060547	highcor	Ath
+extrinsic component of membrane	8	28	2.56960908173986e-6	0.0012946547090165995	highcor	Ath
+fatty acid binding	4	8	7.836399936359769e-5	0.015792958005077053	highcor	Ath
+GTPase activator activity	11	61	4.853461687287915e-6	0.0020960020972387665	highcor	Ath
+GTPase regulator activity	11	62	5.725227482709188e-6	0.0022926724385871023	highcor	Ath
+guanyl-nucleotide exchange factor activity	8	19	8.15025124141758e-8	4.927641900561069e-5	highcor	Ath
+hydrogen peroxide catabolic process	8	30	4.561966187201045e-6	0.0020960020972387665	highcor	Ath
+hydrogen peroxide metabolic process	8	43	7.71383715849298e-5	0.015792958005077053	highcor	Ath
+light-harvesting complex	3	4	1.4604031627453256e-4	0.02386377708637362	highcor	Ath
+N-acyltransferase activity	5	19	3.25926263995466e-4	0.04691786171706161	highcor	Ath
+oxidoreductase activity, acting on peroxide as acceptor	8	51	2.6801924456314186e-4	0.03952303299094526	highcor	Ath
+peroxidase activity	8	49	2.0124990410376483e-4	0.031198895390034925	highcor	Ath
+photosynthesis, light harvesting	15	20	7.822702385185164e-19	7.882676436804917e-16	highcor	Ath
+photosynthesis, light harvesting in photosystem I	15	15	5.884134395462922e-23	1.185849218498961e-19	highcor	Ath
+photosynthesis, light harvesting in photosystem II	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+photosystem	23	27	1.0070338950912066e-30	6.0885269297214346e-27	highcor	Ath
+photosystem I	18	20	3.5156595703416244e-25	1.0627838881142731e-21	highcor	Ath
+photosystem I reaction center	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+photosystem II	16	19	1.6792570890833348e-21	2.0305576721195685e-18	highcor	Ath
+photosystem II oxygen evolving complex	4	5	6.067277376346946e-6	0.0022926724385871023	highcor	Ath
+plastoglobule	16	31	3.599610884349971e-16	2.7204059258474905e-13	highcor	Ath
+production of siRNA involved in RNA interference	4	9	1.3732396616839923e-4	0.02386377708637362	highcor	Ath
+protein domain specific binding	17	34	8.463215227592399e-17	7.309799895146235e-14	highcor	Ath
+protein-chromophore linkage	15	27	7.07305856511384e-16	4.751523564964254e-13	highcor	Ath
+PSII associated light-harvesting complex II	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+reactive oxygen species metabolic process	10	78	2.6387713341070185e-4	0.03952303299094526	highcor	Ath
+response to fructose	5	14	6.446844956329777e-5	0.014436157261470307	highcor	Ath
+response to low light intensity stimulus	4	8	7.836399936359769e-5	0.015792958005077053	highcor	Ath
+ribulose bisphosphate carboxylase complex assembly	4	4	1.2465728745244662e-6	6.851617817613566e-4	highcor	Ath
+RNA interference	4	9	1.3732396616839923e-4	0.02386377708637362	highcor	Ath
+serine family amino acid metabolic process	7	36	1.6270767165727293e-4	0.02588764691683874	highcor	Ath
+specification of plant organ axis polarity	3	3	3.744500872452648e-5	0.0098431531629777	highcor	Ath
+stem vascular tissue pattern formation	3	5	3.5599987462181103e-4	0.04783056093252154	highcor	Ath
+tRNA aminoacylation for protein translation	5	13	4.26132336055772e-5	0.01030558441517279	highcor	Ath
+alternative respiration	3	4	3.3167717988620495e-4	0.026043119864831106	lowcor	Ath
+amino sugar catabolic process	7	7	3.159031611210237e-10	1.9099505121377092e-7	lowcor	Ath
+amino sugar metabolic process	7	14	8.261030833912306e-7	2.49730962109169e-4	lowcor	Ath
+aminoglycan metabolic process	7	10	3.373468585400154e-8	1.2747494417080832e-5	lowcor	Ath
+anaphase-promoting complex	4	4	3.7670678117028033e-6	8.134175710555409e-4	lowcor	Ath
+anaphase-promoting complex binding	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+anaphase-promoting complex-dependent catabolic process	4	6	5.2613664655844406e-5	0.007068938144649673	lowcor	Ath
+androecium development	18	65	2.2126975563585893e-10	1.4864410473048923e-7	lowcor	Ath
+anther dehiscence	18	29	6.785573460252886e-18	2.0512788570344474e-14	lowcor	Ath
+anther development	18	50	1.4884704646557699e-12	1.5986086512402028e-9	lowcor	Ath
+beta-glucan catabolic process	10	11	2.7525572260397925e-13	4.1604902471591467e-10	lowcor	Ath
+beta-glucan metabolic process	13	59	1.313468888899705e-6	3.609651319221644e-4	lowcor	Ath
+C4-dicarboxylate transport	5	12	1.0095133171075671e-4	0.010344944941071781	lowcor	Ath
+carbohydrate derivative catabolic process	7	32	4.0486130983963486e-4	0.030597393491130408	lowcor	Ath
+cation:cation antiporter activity	6	21	2.2202809082599444e-4	0.01945480923382554	lowcor	Ath
+cell cycle DNA replication	5	16	4.8051039905021867e-4	0.035428852105580756	lowcor	Ath
+cell cycle phase transition	8	23	3.7441656100985168e-6	8.134175710555409e-4	lowcor	Ath
+cell killing	5	13	1.5810558691600526e-4	0.014483429977184362	lowcor	Ath
+cell population proliferation	8	37	1.7064415869002934e-4	0.015172273285881136	lowcor	Ath
+cell wall macromolecule catabolic process	7	19	9.994928337736205e-6	0.0018311920221197907	lowcor	Ath
+cellular carbohydrate catabolic process	11	28	1.2203789918672231e-8	5.270293846306593e-6	lowcor	Ath
+cellular polysaccharide catabolic process	11	18	2.7083006315981367e-11	2.0467982023302918e-8	lowcor	Ath
+cellular response to phosphate starvation	20	50	7.665982278343138e-15	1.5449509618287535e-11	lowcor	Ath
+cellulase activity	10	12	1.5864458993452228e-12	1.5986086512402028e-9	lowcor	Ath
+cellulose metabolic process	13	50	1.6594310220947407e-7	5.901717623285178e-5	lowcor	Ath
+chitin binding	7	8	2.4307942414034313e-9	1.1305063064250113e-6	lowcor	Ath
+chitinase activity	7	8	2.4307942414034313e-9	1.1305063064250113e-6	lowcor	Ath
+cyclin-dependent protein serine/threonine kinase regulator activity	7	19	9.994928337736205e-6	0.0018311920221197907	lowcor	Ath
+dehiscence	19	32	2.677927631239741e-18	1.6190750458475475e-14	lowcor	Ath
+dicarboxylic acid transport	5	14	2.370457248656826e-4	0.01990525628524885	lowcor	Ath
+DNA endoreduplication	5	15	3.427208302784608e-4	0.026565258203379155	lowcor	Ath
+DNA-dependent DNA replication	8	26	1.0607394363139274e-5	0.0018862443035158837	lowcor	Ath
+double-stranded RNA binding	3	4	3.3167717988620495e-4	0.026043119864831106	lowcor	Ath
+glucan catabolic process	11	22	5.107429664995944e-10	2.8072290685968613e-7	lowcor	Ath
+glucosamine-containing compound metabolic process	7	13	4.2937971738065346e-7	1.3663314585702269e-4	lowcor	Ath
+hydrotropism	4	5	1.8174562517973475e-5	0.0028916685522017795	lowcor	Ath
+inorganic anion exchanger activity	4	4	3.7670678117028033e-6	8.134175710555409e-4	lowcor	Ath
+intracellular auxin transport	4	5	1.8174562517973475e-5	0.0028916685522017795	lowcor	Ath
+jasmonic acid hydrolase	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+kinase inhibitor activity	4	7	1.1847089505984324e-4	0.011489556938710099	lowcor	Ath
+kinase regulator activity	9	37	2.4551521288729562e-5	0.0036204511636989986	lowcor	Ath
+malate transport	5	11	6.110327497168494e-5	0.007539395928138921	lowcor	Ath
+metal ion:proton antiporter activity	6	14	1.6013338606585564e-5	0.002689351255983787	lowcor	Ath
+mitotic cell cycle phase transition	8	23	3.7441656100985168e-6	8.134175710555409e-4	lowcor	Ath
+monovalent cation:proton antiporter activity	6	18	8.507167116304188e-5	0.009094944322634474	lowcor	Ath
+mRNA transcription	4	6	5.2613664655844406e-5	0.007068938144649673	lowcor	Ath
+negative regulation of cell cycle	7	12	2.060139581846418e-7	6.919779951024136e-5	lowcor	Ath
+negative regulation of cell cycle process	5	10	3.45840612334576e-5	0.004978457957559159	lowcor	Ath
+negative regulation of defense response to insect	3	4	3.3167717988620495e-4	0.026043119864831106	lowcor	Ath
+negative regulation of mitotic cell cycle	4	7	1.1847089505984324e-4	0.011489556938710099	lowcor	Ath
+nuclear chromosome	5	14	2.370457248656826e-4	0.01990525628524885	lowcor	Ath
+nuclear ubiquitin ligase complex	5	7	3.220741852845322e-6	8.134175710555409e-4	lowcor	Ath
+polygalacturonase activity	6	17	5.8901566460630604e-5	0.007419143142103596	lowcor	Ath
+polysaccharide catabolic process	17	76	2.4301487587912708e-8	9.795119597101349e-6	lowcor	Ath
+positive regulation of anaphase-promoting complex-dependent catabolic process	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+positive regulation of ubiquitin protein ligase activity	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+positive regulation of ubiquitin-protein transferase activity	3	4	3.3167717988620495e-4	0.026043119864831106	lowcor	Ath
+protein complex oligomerization	10	40	6.6408986183106266e-6	0.0013845128636657258	lowcor	Ath
+protein kinase inhibitor activity	4	7	1.1847089505984324e-4	0.011489556938710099	lowcor	Ath
+protein kinase regulator activity	9	37	2.4551521288729562e-5	0.0036204511636989986	lowcor	Ath
+protein polyubiquitination	19	62	9.56109286223885e-12	8.258052492156583e-9	lowcor	Ath
+protein self-association	10	55	1.2621935542041687e-4	0.011923784732372506	lowcor	Ath
+regulation of cell cycle process	7	26	9.961825630395901e-5	0.010344944941071781	lowcor	Ath
+regulation of cell population proliferation	8	32	5.64897832295881e-5	0.007266749561831694	lowcor	Ath
+regulation of cyclin-dependent protein kinase activity	7	21	2.1350905085233584e-5	0.003309937747315955	lowcor	Ath
+regulation of kinase activity	7	33	4.945548324680333e-4	0.03559617282263964	lowcor	Ath
+regulation of mitotic cell cycle	8	32	5.64897832295881e-5	0.007266749561831694	lowcor	Ath
+regulation of mitotic nuclear division	4	6	5.2613664655844406e-5	0.007068938144649673	lowcor	Ath
+regulation of nuclear division	4	8	2.2866578645765946e-4	0.019750190641757273	lowcor	Ath
+regulation of pH	6	20	1.6469175204291976e-4	0.014861587057484969	lowcor	Ath
+regulation of protein kinase activity	7	33	4.945548324680333e-4	0.03559617282263964	lowcor	Ath
+regulation of protein serine/threonine kinase activity	7	27	1.294113050008376e-4	0.012037242308231758	lowcor	Ath
+regulation of transferase activity	10	41	8.439960136629502e-6	0.001700933299535399	lowcor	Ath
+regulation of ubiquitin protein ligase activity	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+regulation of ubiquitin-protein transferase activity	3	4	3.3167717988620495e-4	0.026043119864831106	lowcor	Ath
+response to hydrogen peroxide	11	52	1.3079188853763446e-5	0.0022593364517101084	lowcor	Ath
+response to reactive oxygen species	12	88	4.668840894986198e-4	0.03484915068035377	lowcor	Ath
+rhamnogalacturonan endolyase activity	4	4	3.7670678117028033e-6	8.134175710555409e-4	lowcor	Ath
+sodium ion transmembrane transporter activity	6	13	9.504523382359436e-6	0.0018311920221197907	lowcor	Ath
+sodium:proton antiporter activity	6	10	1.3036766084418333e-6	3.609651319221644e-4	lowcor	Ath
+solute:cation antiporter activity	6	23	3.830430432438856e-4	0.029314914423449776	lowcor	Ath
+solute:proton antiporter activity	6	19	1.197224755439524e-4	0.011489556938710099	lowcor	Ath
+ubiquitin-protein transferase activator activity	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+ubiquitin-protein transferase regulator activity	3	3	8.574459583032831e-5	0.009094944322634474	lowcor	Ath
+unfolded protein binding	10	65	5.200747672036065e-4	0.03699261226485888	lowcor	Ath
+'de novo' IMP biosynthetic process	3	5	3.8142179375344454e-4	0.020197068466649364	highcor	Gma
+5S rRNA binding	4	4	1.368639760253213e-6	1.870608519381377e-4	highcor	Gma
+acylglycerol biosynthetic process	4	11	3.726338357172689e-4	0.020197068466649364	highcor	Gma
+adenylate kinase activity	7	7	5.331858664550675e-11	2.7530163571296652e-8	highcor	Gma
+aldonate transmembrane transport	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+anaerobic respiration	4	11	3.726338357172689e-4	0.020197068466649364	highcor	Gma
+ATP biosynthetic process	4	10	2.4371294437771827e-4	0.01490176384899022	highcor	Gma
+ATP synthesis coupled proton transport	4	10	2.4371294437771827e-4	0.01490176384899022	highcor	Gma
+C-4 methylsterol oxidase activity	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+cellular metabolic compound salvage	8	39	4.337128506788002e-5	0.003875891571354586	highcor	Gma
+cellular respiration	10	52	8.818256852232138e-6	9.756771331505416e-4	highcor	Gma
+cellular response to decreased oxygen levels	7	16	4.660340736857535e-7	6.767688563805301e-5	highcor	Gma
+cellular response to hypoxia	7	15	2.700882407563124e-7	4.2010257416599666e-5	highcor	Gma
+cellular response to oxygen levels	7	16	4.660340736857535e-7	6.767688563805301e-5	highcor	Gma
+chloroplast fission	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+copper ion binding	10	68	9.938228063722975e-5	0.007827617934257741	highcor	Gma
+cytochrome complex	8	19	9.737909768110983e-8	1.7404641035542974e-5	highcor	Gma
+detection of chemical stimulus	8	21	2.467853048381994e-7	4.095754684225403e-5	highcor	Gma
+detection of hypoxia	8	9	1.5700103887894357e-11	1.0156393665001939e-8	highcor	Gma
+detection of stimulus	8	36	2.3345110550055493e-5	0.0022600985151272476	highcor	Gma
+dioxygenase activity	14	23	1.5439284941834368e-15	2.3915452374901436e-12	highcor	Gma
+diterpenoid biosynthetic process	3	6	7.43414595360664e-4	0.03454647624641005	highcor	Gma
+electron transfer activity	7	26	1.9895079916478347e-5	0.00196707311429521	highcor	Gma
+energy derivation by oxidation of organic compounds	10	59	2.8268589676125167e-5	0.0026809007392847683	highcor	Gma
+ER overload response	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+ER-nucleus signaling pathway	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+establishment of protein localization to organelle	12	101	1.7077549249724016e-4	0.011177376248375705	highcor	Gma
+inner mitochondrial membrane protein complex	17	71	1.7066517829947532e-10	6.609009029647182e-8	highcor	Gma
+inosine nucleosidase activity	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+isoprenoid biosynthetic process	7	35	1.557467240062227e-4	0.010393546551694324	highcor	Gma
+ligase activity	15	79	5.996523214980244e-8	1.1146337352005276e-5	highcor	Gma
+ligase activity, forming carbon-nitrogen bonds	6	30	4.644189296166233e-4	0.023715986438774157	highcor	Gma
+mitochondrial inner membrane	18	84	3.5226899364884176e-10	1.0913293423241118e-7	highcor	Gma
+mitochondrial membrane	20	108	5.811159514426121e-10	1.6877786414711365e-7	highcor	Gma
+mitochondrial protein-containing complex	17	72	2.164922526569788e-10	7.738765369976772e-8	highcor	Gma
+mitochondrial respirasome	14	52	1.3464596550989922e-9	3.2056299529157375e-7	highcor	Gma
+mitochondrial respiratory chain complex I	7	31	6.856301404905258e-5	0.005900228264554581	highcor	Gma
+mitochondrial respiratory chain complex IV	3	3	4.0167229692075185e-5	0.003659943458413204	highcor	Gma
+mRNA cleavage and polyadenylation specificity factor complex	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+mRNA processing	12	121	9.067171304517056e-4	0.04090790781756384	highcor	Gma
+NADH dehydrogenase complex	7	31	6.856301404905258e-5	0.005900228264554581	highcor	Gma
+negative regulation of programmed cell death	5	21	6.000589269435864e-4	0.02904660243236298	highcor	Gma
+neutral lipid biosynthetic process	4	11	3.726338357172689e-4	0.020197068466649364	highcor	Gma
+nuclear transport	9	56	1.0940239597154365e-4	0.008473215567996056	highcor	Gma
+nucleobase-containing compound kinase activity	9	15	2.5190803763510657e-10	8.361547506359574e-8	highcor	Gma
+nucleobase-containing small molecule catabolic process	3	5	3.8142179375344454e-4	0.020197068466649364	highcor	Gma
+nucleocytoplasmic transport	9	54	8.158891690638296e-5	0.00687582599820551	highcor	Gma
+nucleoside metabolic process	7	24	1.110912049300826e-5	0.001200560068163009	highcor	Gma
+nucleoside monophosphate kinase activity	8	9	1.5700103887894357e-11	1.0156393665001939e-8	highcor	Gma
+nucleoside phosphate biosynthetic process	15	60	1.0735626664358128e-9	2.7715809505151236e-7	highcor	Gma
+nucleotide biosynthetic process	15	60	1.0735626664358128e-9	2.7715809505151236e-7	highcor	Gma
+organelle inner membrane	23	110	2.0512721738845983e-12	1.9064523584083456e-9	highcor	Gma
+oxidoreductase activity, acting on diphenols and related substances as donors	4	4	1.368639760253213e-6	1.870608519381377e-4	highcor	Gma
+oxidoreductase activity, acting on single donors with incorporation of molecular oxygen	14	23	1.5439284941834368e-15	2.3915452374901436e-12	highcor	Gma
+oxidoreductase activity, acting on single donors with incorporation of molecular oxygen, incorporation of two atoms of oxygen	14	22	6.234058399513874e-16	2.3915452374901436e-12	highcor	Gma
+oxidoreductase complex	11	53	1.4095293837025378e-6	1.8714522988759122e-4	highcor	Gma
+oxidoreduction-driven active transmembrane transporter activity	4	8	8.58183576276995e-5	0.00687582599820551	highcor	Gma
+oxygen binding	5	6	2.712088922956725e-7	4.2010257416599666e-5	highcor	Gma
+pectinesterase activity	3	5	3.8142179375344454e-4	0.020197068466649364	highcor	Gma
+peptidyl-cysteine modification	8	10	7.615395429593529e-11	3.538874256132113e-8	highcor	Gma
+peptidyl-cysteine oxidation	8	8	1.7982255591388648e-12	1.9064523584083456e-9	highcor	Gma
+phosphatidylcholine metabolic process	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+phosphoglycerate transmembrane transport	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+phospholipase D activity	3	3	4.0167229692075185e-5	0.003659943458413204	highcor	Gma
+phosphoric diester hydrolase activity	5	8	2.390443862280711e-6	3.085664618894018e-4	highcor	Gma
+phosphotransferase activity, phosphate group as acceptor	8	13	1.988579781304602e-9	4.4004429732011835e-7	highcor	Gma
+pigment biosynthetic process	7	41	4.361269761534599e-4	0.022771708518934026	highcor	Gma
+plastid fission	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+plastid inner membrane	6	26	2.0225178379705834e-4	0.013053667212568475	highcor	Gma
+protein export from nucleus	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+protein localization to organelle	13	119	2.1718782511824408e-4	0.01382564141540384	highcor	Gma
+proton channel activity	3	6	7.43414595360664e-4	0.03454647624641005	highcor	Gma
+proton transmembrane transporter activity	9	41	7.974968931496587e-6	9.038946493820644e-4	highcor	Gma
+proton-transporting ATP synthase activity, rotational mechanism	3	6	7.43414595360664e-4	0.03454647624641005	highcor	Gma
+proton-transporting ATP synthase complex	4	12	5.438715742849752e-4	0.026886927720237017	highcor	Gma
+purine nucleosidase activity	3	6	7.43414595360664e-4	0.03454647624641005	highcor	Gma
+purine nucleoside catabolic process	3	5	3.8142179375344454e-4	0.020197068466649364	highcor	Gma
+purine nucleoside metabolic process	4	6	1.9428992146224556e-5	0.0019627505761631633	highcor	Gma
+purine nucleoside triphosphate biosynthetic process	4	13	7.64423234204941e-4	0.03482622322892511	highcor	Gma
+purine nucleotide biosynthetic process	9	43	1.2079497207903443e-5	0.001275759625571075	highcor	Gma
+purine nucleotide metabolic process	13	91	1.2695559013745898e-5	0.001311028060819493	highcor	Gma
+purine ribonucleoside metabolic process	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+purine ribonucleoside triphosphate biosynthetic process	4	13	7.64423234204941e-4	0.03482622322892511	highcor	Gma
+purine ribonucleotide biosynthetic process	7	39	3.1651584580918095e-4	0.01885704019840082	highcor	Gma
+purine-containing compound biosynthetic process	10	48	4.121264736063435e-6	4.910645443201739e-4	highcor	Gma
+purine-containing compound metabolic process	17	108	1.4171277451969412e-7	2.439034308122291e-5	highcor	Gma
+regulation of cellular response to hypoxia	3	5	3.8142179375344454e-4	0.020197068466649364	highcor	Gma
+regulation of isoprenoid metabolic process	4	10	2.4371294437771827e-4	0.01490176384899022	highcor	Gma
+regulation of lipid biosynthetic process	5	20	4.703165668145666e-4	0.023756098760731426	highcor	Gma
+regulation of lipid metabolic process	6	27	2.5258880548084954e-4	0.015243898429474127	highcor	Gma
+regulation of programmed cell death	6	30	4.644189296166233e-4	0.023715986438774157	highcor	Gma
+respirasome	16	54	1.748464586184969e-11	1.0156393665001939e-8	highcor	Gma
+respiratory chain complex	15	53	1.5714234110892044e-10	6.609009029647182e-8	highcor	Gma
+respiratory chain complex IV	5	5	4.65155394151874e-8	9.006571319265661e-6	highcor	Gma
+response to decreased oxygen levels	16	77	5.498369406575926e-9	1.1614055741981059e-6	highcor	Gma
+response to endoplasmic reticulum stress	7	42	5.081446315384561e-4	0.02539083981461511	highcor	Gma
+response to hypoxia	15	61	1.3796556715798311e-9	3.2056299529157375e-7	highcor	Gma
+response to oxygen levels	16	78	6.703341038515036e-9	1.3543663393904073e-6	highcor	Gma
+ribonucleoside catabolic process	3	4	1.5656299948754092e-4	0.010393546551694324	highcor	Gma
+ribonucleoside metabolic process	4	5	6.6571366436053094e-6	7.733928495708469e-4	highcor	Gma
+ribonucleotide biosynthetic process	7	43	5.893225982867037e-4	0.02882718014987697	highcor	Gma
+ribose phosphate diphosphokinase activity	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+rRNA binding	4	8	8.58183576276995e-5	0.00687582599820551	highcor	Gma
+sphingolipid biosynthetic process	4	14	0.0010413879323074417	0.04653201655223732	highcor	Gma
+terpenoid biosynthetic process	6	29	3.8247084679688916e-4	0.020197068466649364	highcor	Gma
+terpenoid metabolic process	6	35	0.0010984525259042852	0.04861437036073537	highcor	Gma
+transmembrane transporter complex	10	46	2.7309291825728392e-6	3.3396389240568375e-4	highcor	Gma
+transporter complex	10	46	2.7309291825728392e-6	3.3396389240568375e-4	highcor	Gma
+triglyceride biosynthetic process	4	11	3.726338357172689e-4	0.020197068466649364	highcor	Gma
+triose phosphate transport	2	2	0.0011758427976174845	0.04922649982458063	highcor	Gma
+very long-chain fatty acid metabolic process	4	8	8.58183576276995e-5	0.00687582599820551	highcor	Gma
+acyltransferase, acyl groups converted into alkyl on transfer	5	11	2.1816112724730418e-5	0.01609799466808814	lowcor	Gma
+chemotaxis	5	10	1.2258333606342075e-5	0.011392895253734325	lowcor	Gma
+clathrin complex	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+defense response to symbiont	9	45	2.4249184996044113e-5	0.01609799466808814	lowcor	Gma
+DNA replication	6	24	1.5482235240841114e-4	0.04295048288554064	lowcor	Gma
+double-stranded RNA-specific ribonuclease activity	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+enzyme inhibitor activity	6	25	1.9764068480966415e-4	0.04592181311552546	lowcor	Gma
+histidine biosynthetic process	3	4	1.7560989344206417e-4	0.04295048288554064	lowcor	Gma
+inorganic anion exchanger activity	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+locomotion	5	10	1.2258333606342075e-5	0.011392895253734325	lowcor	Gma
+manganese ion transmembrane transporter activity	3	4	1.7560989344206417e-4	0.04295048288554064	lowcor	Gma
+mannosidase activity	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+oxidoreductase activity, acting on the CH-NH2 group of donors	5	15	1.259553716786177e-4	0.03902097414603577	lowcor	Gma
+oxidoreductase activity, acting on the CH-NH2 group of donors, oxygen as acceptor	5	7	1.116864013107443e-6	0.0017300223563034291	lowcor	Gma
+positive regulation of DNA-templated transcription, initiation	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+primary amine oxidase activity	5	7	1.116864013107443e-6	0.0017300223563034291	lowcor	Gma
+quinone binding	5	6	3.2875314173614123e-7	0.0015277158496478484	lowcor	Gma
+regulation of DNA-templated transcription, initiation	3	3	4.5100642917480455e-5	0.01612174520288705	lowcor	Gma
+regulation of leaf senescence	7	29	5.51825694381155e-5	0.018316671441351625	lowcor	Gma
+RNA cap binding	3	4	1.7560989344206417e-4	0.04295048288554064	lowcor	Gma
+4 iron, 4 sulfur cluster binding	7	34	2.0413018796137228e-4	0.01184833069479019	highcor	Zma
+5'-3' RNA polymerase activity	7	26	3.226451074013175e-5	0.002561232779047517	highcor	Zma
+6,7-dimethyl-8-ribityllumazine synthase activity	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+alkane biosynthetic process	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+ATPase complex	5	22	0.0010561541846585392	0.04101525387616399	highcor	Zma
+autophagosome	5	19	5.111606892282582e-4	0.02378659827977705	highcor	Zma
+autophagosome assembly	6	18	3.1445365518255794e-5	0.0025334639263812652	highcor	Zma
+autophagosome membrane	4	5	8.95187516615577e-6	9.474945519001735e-4	highcor	Zma
+autophagosome organization	6	25	2.40581034350228e-4	0.013815493866197136	highcor	Zma
+C-4 methylsterol oxidase activity	4	6	2.6068285368355823e-5	0.00213206976391492	highcor	Zma
+carbon-oxygen lyase activity, acting on polysaccharides	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+carboxyl- or carbamoyltransferase activity	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+catalytic step 2 spliceosome	4	14	0.0013729527671370323	0.04767855083487251	highcor	Zma
+cellular alkane metabolic process	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+cellular response to alkaline pH	4	4	1.8445168904828767e-6	2.553000557647838e-4	highcor	Zma
+cellular response to fatty acid	10	79	6.362299476334164e-4	0.02838321700268745	highcor	Zma
+cellular response to jasmonic acid stimulus	10	77	5.174221029671316e-4	0.023872175314671593	highcor	Zma
+cellular response to nitrogen starvation	4	14	0.0013729527671370323	0.04767855083487251	highcor	Zma
+cellular response to salt stress	7	41	6.82122855107241e-4	0.029223009300546724	highcor	Zma
+chromatin	47	109	1.476736223735636e-38	1.9928555339312407e-35	highcor	Zma
+chromatin assembly	23	59	3.0088141220659154e-18	1.4765071482647103e-15	highcor	Zma
+chromatin assembly or disassembly	24	64	1.6148700621949574e-18	8.717068595728379e-16	highcor	Zma
+chromatin DNA binding	6	30	6.894419112326843e-4	0.02930399556562228	highcor	Zma
+chromatin organization involved in negative regulation of transcription	18	57	1.0174140277380027e-12	3.4325005760810866e-10	highcor	Zma
+chromatin organization involved in regulation of transcription	18	57	1.0174140277380027e-12	3.4325005760810866e-10	highcor	Zma
+chromatin silencing	17	40	1.40974843754809e-14	5.853709281449684e-12	highcor	Zma
+chromosome condensation	4	11	4.944954046006059e-4	0.023414791175737464	highcor	Zma
+citrulline biosynthetic process	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+cleavage involved in rRNA processing	7	17	1.2749343799905954e-6	1.8110778376813775e-4	highcor	Zma
+cytoplasmic translation	11	58	7.457856650141648e-6	8.299880533258596e-4	highcor	Zma
+cytosolic large ribosomal subunit	16	99	6.414669498282569e-7	9.35848268965657e-5	highcor	Zma
+cytosolic small ribosomal subunit	14	66	9.883559443387628e-8	1.7783817958468806e-5	highcor	Zma
+DNA duplex unwinding	5	23	0.0013089636745417168	0.04767855083487251	highcor	Zma
+DNA helicase activity	5	19	5.111606892282582e-4	0.02378659827977705	highcor	Zma
+DNA packaging	23	62	1.1224672063228856e-17	5.0492316497757804e-15	highcor	Zma
+DNA packaging complex	36	50	5.101997841673617e-41	9.180194783118061e-38	highcor	Zma
+DNA unwinding involved in DNA replication	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+DNA-directed 5'-3' RNA polymerase activity	7	25	2.4348599253411187e-5	0.002119899012417961	highcor	Zma
+DNA-directed RNA polymerase complex	10	53	2.0336801507467723e-5	0.0018606449921578097	highcor	Zma
+double-strand break repair	9	37	5.926716085924949e-6	6.954872485178885e-4	highcor	Zma
+double-strand break repair via break-induced replication	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+double-strand break repair via homologous recombination	8	28	5.334600272611306e-6	6.69678424919903e-4	highcor	Zma
+endonucleolytic cleavage in ITS1 to separate SSU-rRNA from 5.8S rRNA and LSU-rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)	4	6	2.6068285368355823e-5	0.00213206976391492	highcor	Zma
+endonucleolytic cleavage involved in rRNA processing	5	9	7.534163507404061e-6	8.299880533258596e-4	highcor	Zma
+endonucleolytic cleavage of tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)	4	8	1.1463613400994956e-4	0.007546412821776923	highcor	Zma
+endonucleolytic cleavage to generate mature 3'-end of SSU-rRNA from (SSU-rRNA, 5.8S rRNA, LSU-rRNA)	4	5	8.95187516615577e-6	9.474945519001735e-4	highcor	Zma
+endoplasmic reticulum calcium ion homeostasis	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+exoribonuclease complex	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+exosome (RNase complex)	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+ferric iron binding	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+formate dehydrogenase (NAD+) activity	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+glycerol-3-phosphate 2-O-acyltransferase activity	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+histone H3-K27 trimethylation	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+inner mitochondrial membrane protein complex	17	94	5.2356645525065996e-8	1.083862548326517e-5	highcor	Zma
+ISWI-type complex	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+jasmonic acid mediated signaling pathway	10	76	4.6530085728300243e-4	0.023288360706563503	highcor	Zma
+L-allo-threonine aldolase activity	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+large ribosomal subunit	20	110	3.1624001656816307e-9	8.984545312815496e-7	highcor	Zma
+macroautophagy	6	28	4.6575175841696923e-4	0.023288360706563503	highcor	Zma
+maturation of 5.8S rRNA	6	14	5.773162954423408e-6	6.925229695106123e-4	highcor	Zma
+maturation of 5.8S rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)	6	13	3.4051946605527256e-6	4.483229457966735e-4	highcor	Zma
+maturation of SSU-rRNA	6	21	8.361120104078749e-5	0.005786323887412447	highcor	Zma
+maturation of SSU-rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)	6	17	2.163689398796732e-5	0.00194659922911746	highcor	Zma
+MCM complex	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+methyltransferase complex	4	14	0.0013729527671370323	0.04767855083487251	highcor	Zma
+mitochondrial protein-containing complex	20	114	6.02905708159733e-9	1.6272425063231192e-6	highcor	Zma
+mitochondrial respirasome	9	61	3.7555261563820906e-4	0.02068605121648013	highcor	Zma
+mitochondrial respiratory chain complex I	8	32	1.584319577325656e-5	0.0015549376506188894	highcor	Zma
+mitochondrial respiratory chain complex I assembly	4	9	2.0031771041198611e-4	0.011753423921781532	highcor	Zma
+mitochondrion organization	11	92	5.674409969254263e-4	0.025958021198334333	highcor	Zma
+mRNA 5'-splice site recognition	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+mRNA catabolic process	9	68	8.491401431239031e-4	0.03525891148140638	highcor	Zma
+mRNA cis splicing, via spliceosome	4	13	0.0010099963894426858	0.03950696021892477	highcor	Zma
+mRNA splice site selection	5	5	6.767732156465633e-8	1.3047220778786245e-5	highcor	Zma
+mRNA stabilization	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+NADH dehydrogenase complex	8	32	1.584319577325656e-5	0.0015549376506188894	highcor	Zma
+NADH dehydrogenase complex assembly	4	9	2.0031771041198611e-4	0.011753423921781532	highcor	Zma
+ncRNA 3'-end processing	7	13	1.2802878800065045e-7	2.1596856175859723e-5	highcor	Zma
+negative regulation of chromatin silencing	4	9	2.0031771041198611e-4	0.011753423921781532	highcor	Zma
+negative regulation of DNA metabolic process	4	11	4.944954046006059e-4	0.023414791175737464	highcor	Zma
+negative regulation of DNA recombination	4	11	4.944954046006059e-4	0.023414791175737464	highcor	Zma
+negative regulation of gene expression, epigenetic	17	48	5.121182155704592e-13	1.9745815197495277e-10	highcor	Zma
+negative regulation of gene silencing	4	13	0.0010099963894426858	0.03950696021892477	highcor	Zma
+nuclear chromosome	6	34	0.0013778906873360712	0.04767855083487251	highcor	Zma
+nuclear DNA-directed RNA polymerase complex	10	49	9.788462111809585e-6	0.0010161176630682333	highcor	Zma
+nuclear exosome (RNase complex)	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+nuclear mRNA surveillance	3	5	4.7456829894812626e-4	0.023288360706563503	highcor	Zma
+nuclear outer membrane	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+nuclear-transcribed mRNA catabolic process	7	43	9.173451650321604e-4	0.037747899628981646	highcor	Zma
+nucleosomal DNA binding	4	8	1.1463613400994956e-4	0.007546412821776923	highcor	Zma
+nucleosome	36	49	1.478376223541898e-41	3.990137427339583e-38	highcor	Zma
+nucleosome assembly	22	40	1.2408398681288746e-21	8.372567010199581e-19	highcor	Zma
+nucleosome organization	22	43	1.0379500206156008e-20	6.225393568092238e-18	highcor	Zma
+nucleosome positioning	5	10	1.4609978014657465e-5	0.0014880124777947358	highcor	Zma
+organellar ribosome	4	13	0.0010099963894426858	0.03950696021892477	highcor	Zma
+organelle assembly	13	80	6.7575499964215604e-6	7.761118059719912e-4	highcor	Zma
+ornithine carbamoyltransferase activity	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+oxidoreductase complex	10	73	3.3435563332747645e-4	0.018606718646409462	highcor	Zma
+pectate lyase activity	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+perinuclear region of cytoplasm	4	13	0.0010099963894426858	0.03950696021892477	highcor	Zma
+polysomal ribosome	18	100	2.2910097762602135e-8	5.347054086784133e-6	highcor	Zma
+polysome	19	104	7.217549758664082e-9	1.8552539808223197e-6	highcor	Zma
+positive regulation of dephosphorylation	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+positive regulation of gene expression, epigenetic	4	11	4.944954046006059e-4	0.023414791175737464	highcor	Zma
+pre-replicative complex assembly	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+prespliceosome	4	7	5.904489769823481e-5	0.004193741549671994	highcor	Zma
+protein heterodimerization activity	34	103	1.3338859631888742e-23	1.4400632858587086e-20	highcor	Zma
+protein-DNA complex	40	64	1.3793227526102178e-41	3.990137427339583e-38	highcor	Zma
+protein-DNA complex assembly	28	67	6.08230286159172e-23	5.47204514114535e-20	highcor	Zma
+protein-DNA complex subunit organization	28	71	4.1707567924313907e-22	3.2162493093635207e-19	highcor	Zma
+recombinational repair	8	28	5.334600272611306e-6	6.69678424919903e-4	highcor	Zma
+regulation of cellular response to hypoxia	3	6	9.23068312527895e-4	0.037747899628981646	highcor	Zma
+regulation of cellular response to stress	7	42	7.928685199868314e-4	0.033177552487510975	highcor	Zma
+regulation of chromatin silencing	4	12	7.201582656940245e-4	0.03037042436106519	highcor	Zma
+regulation of DNA metabolic process	7	30	8.781468761024581e-5	0.0060002997939254035	highcor	Zma
+regulation of DNA recombination	4	13	0.0010099963894426858	0.03950696021892477	highcor	Zma
+regulation of gene expression, epigenetic	18	62	5.103555684299466e-12	1.6205290343440304e-9	highcor	Zma
+regulation of gene silencing	6	24	1.886852499269928e-4	0.011753423921781532	highcor	Zma
+regulation of jasmonic acid mediated signaling pathway	9	29	6.214654655534518e-7	9.318529397382037e-5	highcor	Zma
+respirasome	9	65	6.074570422551065e-4	0.027325442617442207	highcor	Zma
+respiratory chain complex	9	58	2.5439679022317097e-4	0.014455093406575546	highcor	Zma
+response to acidic pH	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+response to alkaline pH	4	7	5.904489769823481e-5	0.004193741549671994	highcor	Zma
+response to ethanol	4	6	2.6068285368355823e-5	0.00213206976391492	highcor	Zma
+response to paraquat	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+response to pH	7	10	9.866816254062008e-9	2.4209579154284874e-6	highcor	Zma
+riboflavin synthase complex	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+ribonucleoprotein complex assembly	11	63	1.70649025770929e-5	0.0016449347162704906	highcor	Zma
+ribonucleoprotein complex subunit organization	11	64	1.9929660140767044e-5	0.001854832852411388	highcor	Zma
+ribosomal small subunit biogenesis	7	31	1.0984667748911517e-4	0.007411904563578046	highcor	Zma
+ribosome assembly	6	26	3.0307599143325774e-4	0.017041710434965888	highcor	Zma
+RNA 3'-end processing	7	40	5.839942870358569e-4	0.026490766062349208	highcor	Zma
+RNA phosphodiester bond hydrolysis	7	41	6.82122855107241e-4	0.029223009300546724	highcor	Zma
+RNA phosphodiester bond hydrolysis, endonucleolytic	5	20	6.610020930218861e-4	0.02900885608237513	highcor	Zma
+RNA polymerase complex	10	54	2.4144156456843193e-5	0.002119899012417961	highcor	Zma
+RNA polymerase II activity	7	7	9.062789430387787e-11	2.71782985251296e-8	highcor	Zma
+RNA polymerase II, core complex	7	14	2.4790360205849925e-7	3.82338183974794e-5	highcor	Zma
+RNA polymerase II, holoenzyme	9	42	1.8014765603530948e-5	0.0017060299075063168	highcor	Zma
+RNA polymerase IV complex	7	13	1.2802878800065045e-7	2.1596856175859723e-5	highcor	Zma
+RNA polymerase V complex	7	14	2.4790360205849925e-7	3.82338183974794e-5	highcor	Zma
+rRNA 3'-end processing	6	9	1.8925968981269304e-7	3.095829713966415e-5	highcor	Zma
+RSF complex	3	4	1.9519844467894384e-4	0.011753423921781532	highcor	Zma
+Sm-like protein family complex	9	24	9.574185446730023e-8	1.7783817958468806e-5	highcor	Zma
+small nuclear ribonucleoprotein complex	9	22	3.8919841292767164e-8	8.403572131934286e-6	highcor	Zma
+small ribosomal subunit	15	73	5.421320638165238e-8	1.083862548326517e-5	highcor	Zma
+spliceosomal complex	10	43	2.788146910327829e-6	3.762604255487405e-4	highcor	Zma
+spliceosomal complex assembly	5	13	6.802248725953367e-5	0.004768641379570945	highcor	Zma
+spliceosomal snRNP complex	9	21	2.3773489826383698e-8	5.347054086784133e-6	highcor	Zma
+SWI/SNF superfamily-type complex	5	20	6.610020930218861e-4	0.02900885608237513	highcor	Zma
+THO complex	3	3	5.0182998837598144e-5	0.0036606463206129026	highcor	Zma
+threonine aldolase activity	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+transmembrane transporter complex	8	53	6.751704613583201e-4	0.029223009300546724	highcor	Zma
+transporter complex	8	56	9.822095943554509e-4	0.03950696021892477	highcor	Zma
+tRNA threonylcarbamoyladenosine metabolic process	2	2	0.001362907977554694	0.04767855083487251	highcor	Zma
+U1 snRNP	5	11	2.5970921643670514e-5	0.00213206976391492	highcor	Zma
+U2-type spliceosomal complex	6	14	5.773162954423408e-6	6.925229695106123e-4	highcor	Zma
+2 iron, 2 sulfur cluster binding	5	19	5.111606892282582e-4	0.03678993867272184	lowcor	Zma
+abscisic acid biosynthetic process	5	13	6.802248725953367e-5	0.007812455026105591	lowcor	Zma
+abscisic acid metabolic process	5	18	3.8836297724864405e-4	0.036144540537727254	lowcor	Zma
+abscisic aldehyde oxidase activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+acetyltransferase activity	9	62	4.251947033794189e-4	0.03678993867272184	lowcor	Zma
+ACP phosphopantetheine attachment site binding	4	12	7.201582656940245e-4	0.04920777617995373	lowcor	Zma
+aging	16	139	5.493254881242611e-5	0.006739224965669912	lowcor	Zma
+alcohol transmembrane transporter activity	3	4	1.9519844467894384e-4	0.019880777441074318	lowcor	Zma
+aldehyde oxidase activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+alpha-galactosidase activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+amine biosynthetic process	5	19	5.111606892282582e-4	0.03678993867272184	lowcor	Zma
+amine metabolic process	9	63	4.8011095517709715e-4	0.03678993867272184	lowcor	Zma
+apocarotenoid biosynthetic process	5	13	6.802248725953367e-5	0.007812455026105591	lowcor	Zma
+apocarotenoid metabolic process	5	18	3.8836297724864405e-4	0.036144540537727254	lowcor	Zma
+arbutin transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+aryl-aldehyde oxidase activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+auxin influx	5	8	3.453661386519963e-6	0.001293125494457123	lowcor	Zma
+auxin metabolic process	11	62	1.4563920567994268e-5	0.003144641729041322	lowcor	Zma
+beta-glucoside transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+beta-glucuronidase activity	4	4	1.8445168904828767e-6	9.43200058523216e-4	lowcor	Zma
+carbohydrate phosphatase activity	6	17	2.163689398796732e-5	0.004492152067194138	lowcor	Zma
+carbohydrate:cation symporter activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+cell wall macromolecule metabolic process	16	101	8.474860137205113e-7	5.71841187757915e-4	lowcor	Zma
+cell wall polysaccharide metabolic process	14	89	4.4614560006920725e-6	0.0014515179889465614	lowcor	Zma
+cellular amine metabolic process	9	34	2.7589594538352807e-6	0.0011456048562925266	lowcor	Zma
+cellular biogenic amine metabolic process	8	30	9.410500997467655e-6	0.0024189468754443047	lowcor	Zma
+cellular homeostasis	14	129	2.950511990071751e-4	0.02864017910024191	lowcor	Zma
+cellular ion homeostasis	11	95	7.463175572440642e-4	0.04973607622226492	lowcor	Zma
+cinnamyl-alcohol dehydrogenase activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+disaccharide biosynthetic process	6	28	4.6575175841696923e-4	0.03678993867272184	lowcor	Zma
+disaccharide transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+disaccharide transport	3	4	1.9519844467894384e-4	0.019880777441074318	lowcor	Zma
+endosome organization	4	12	7.201582656940245e-4	0.04920777617995373	lowcor	Zma
+FAD binding	8	20	2.809128138952835e-7	2.1662390991524863e-4	lowcor	Zma
+flavin adenine dinucleotide binding	12	49	1.5194204497468317e-7	1.3669719312888994e-4	lowcor	Zma
+fructose metabolic process	3	4	1.9519844467894384e-4	0.019880777441074318	lowcor	Zma
+glucoside transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+glucoside transport	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+glycoside transport	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+hemicellulose metabolic process	12	66	4.571286738068089e-6	0.0014515179889465614	lowcor	Zma
+hormone metabolic process	11	95	7.463175572440642e-4	0.04973607622226492	lowcor	Zma
+hydrolase activity, acting on carbon-nitrogen (but not peptide) bonds	7	40	5.839942870358569e-4	0.04094027482363059	lowcor	Zma
+hydrolase activity, acting on carbon-nitrogen (but not peptide) bonds, in cyclic amidines	4	11	4.944954046006059e-4	0.03678993867272184	lowcor	Zma
+indolalkylamine metabolic process	6	16	1.4450320008681387e-5	0.003144641729041322	lowcor	Zma
+indole-3-acetaldehyde oxidase activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+indole-containing compound metabolic process	9	35	3.5933461313184227e-6	0.001293125494457123	lowcor	Zma
+leaf senescence	15	109	1.110840943053952e-5	0.0026070953959153186	lowcor	Zma
+maltose transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+mannan endo-1,4-beta-mannosidase activity	3	4	1.9519844467894384e-4	0.019880777441074318	lowcor	Zma
+molybdenum ion binding	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+morphogenesis of a branching structure	9	33	2.096776714019747e-6	9.43200058523216e-4	lowcor	Zma
+N-acetyltransferase activity	7	21	6.699669863836197e-6	0.0019034114697361996	lowcor	Zma
+N-acyltransferase activity	7	36	2.971193089317427e-4	0.02864017910024191	lowcor	Zma
+oligosaccharide biosynthetic process	6	29	5.691164665081976e-4	0.04042224587120066	lowcor	Zma
+oxidoreductase activity, acting on the aldehyde or oxo group of donors, oxygen as acceptor	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+phosphopantetheine binding	4	5	8.95187516615577e-6	0.0024161111073454423	lowcor	Zma
+plant organ senescence	15	109	1.110840943053952e-5	0.0026070953959153186	lowcor	Zma
+polysaccharide binding	5	19	5.111606892282582e-4	0.03678993867272184	lowcor	Zma
+positive regulation of development, heterochronic	4	4	1.8445168904828767e-6	9.43200058523216e-4	lowcor	Zma
+raffinose alpha-galactosidase activity	3	5	4.7456829894812626e-4	0.03678993867272184	lowcor	Zma
+regulation of anatomical structure morphogenesis	14	124	1.9471185289702753e-4	0.019880777441074318	lowcor	Zma
+regulation of leaf development	8	37	4.941113608953205e-5	0.0062997169238454605	lowcor	Zma
+regulation of morphogenesis of a branching structure	9	20	1.4043020396421849e-8	1.8951056024971285e-5	lowcor	Zma
+regulation of plant organ formation	9	25	1.447218537688397e-7	1.3669719312888994e-4	lowcor	Zma
+root cap development	4	6	2.6068285368355823e-5	0.0052117260895698046	lowcor	Zma
+root hair	6	20	6.163647784737284e-5	0.007393637942669302	lowcor	Zma
+secondary shoot formation	9	33	2.096776714019747e-6	9.43200058523216e-4	lowcor	Zma
+sequence-specific mRNA binding	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+sesquiterpenoid biosynthetic process	5	16	2.1051851908758407e-4	0.021044054926569977	lowcor	Zma
+solute:proton symporter activity	4	11	4.944954046006059e-4	0.03678993867272184	lowcor	Zma
+sucrose transmembrane transporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+sucrose transport	3	4	1.9519844467894384e-4	0.019880777441074318	lowcor	Zma
+sucrose:cation symporter activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+symporter activity	13	42	1.9827965016648606e-9	5.351567757993459e-6	lowcor	Zma
+trans-Golgi network transport vesicle	5	19	5.111606892282582e-4	0.03678993867272184	lowcor	Zma
+trehalase activity	3	3	5.0182998837598144e-5	0.0062997169238454605	lowcor	Zma
+trehalose biosynthetic process	6	19	4.452938370572201e-5	0.0062997169238454605	lowcor	Zma
+trehalose metabolic process	6	19	4.452938370572201e-5	0.0062997169238454605	lowcor	Zma
+trehalose-phosphatase activity	6	14	5.773162954423408e-6	0.001731307423776531	lowcor	Zma
+xyloglucan metabolic process	10	24	5.3766440861472044e-9	9.674374925674202e-6	lowcor	Zma
+xyloglucan:xyloglucosyl transferase activity	10	10	4.382401702707921e-15	2.365620439121736e-11	lowcor	Zma
+ATP-dependent protein folding chaperone	6	19	1.8148300128194528e-4	0.011584664915164173	highcor	Hvu
+box C/D methylation guide snoRNP complex	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+chromatin organization	4	8	3.076610263912652e-4	0.018605395753871774	highcor	Hvu
+clathrin adaptor complex	4	4	5.1246168441905965e-6	0.001472046188493749	highcor	Hvu
+COPI-coated vesicle membrane	3	4	4.176201839505185e-4	0.02399227956795729	highcor	Hvu
+DNA-binding transcription factor activity, RNA polymerase II-specific	12	19	4.2589803734328614e-12	4.893568449074358e-9	highcor	Hvu
+galactoside 2-alpha-L-fucosyltransferase activity	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+Golgi cisterna membrane	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+lipid droplet	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+mitochondrial matrix	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+monolayer-surrounded lipid storage body	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+norspermine:oxygen oxidoreductase activity	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+nucleolus	5	12	1.4488654341292782e-4	0.01040466489884088	highcor	Hvu
+regulation of transcription by RNA polymerase II	13	37	6.609816788192447e-9	3.7973397448165607e-6	highcor	Hvu
+response to water	4	4	5.1246168441905965e-6	0.001472046188493749	highcor	Hvu
+sequence-specific DNA binding	13	85	1.725232879472592e-4	0.011584664915164173	highcor	Hvu
+small-subunit processome	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+snoRNA binding	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+translation	5	17	9.287503656983049e-4	0.04850609864487965	highcor	Hvu
+unfolded protein binding	5	16	6.819971404494184e-4	0.03731498639887532	highcor	Hvu
+vesicle-mediated transport	7	25	1.2130332326473372e-4	0.009291834562078603	highcor	Hvu
+voltage-gated monoatomic anion channel activity	3	3	1.0824850862077241e-4	0.008884109743233393	highcor	Hvu
+cellular oxidant detoxification	7	19	1.9948040835794445e-5	0.0038200498200546365	lowcor	Hvu
+heme binding	10	12	4.441092413610693e-12	5.102815183238686e-9	lowcor	Hvu
+hydrogen peroxide catabolic process	6	8	3.5262283106078254e-7	1.3505454429627972e-4	lowcor	Hvu
+lactoperoxidase activity	5	5	2.824589482427541e-7	1.3505454429627972e-4	lowcor	Hvu
+peroxidase activity	7	17	8.387805071714802e-6	0.0019275176054800616	lowcor	Hvu
+purine nucleobase transmembrane transport	3	3	1.1879281921301459e-4	0.013649294927575377	lowcor	Hvu
+purine nucleobase transmembrane transporter activity	3	3	1.1879281921301459e-4	0.013649294927575377	lowcor	Hvu
+purine nucleobase transport	3	3	1.1879281921301459e-4	0.013649294927575377	lowcor	Hvu
+purine nucleoside transmembrane transport	3	3	1.1879281921301459e-4	0.013649294927575377	lowcor	Hvu
+response to oxidative stress	7	15	3.0239074145912167e-6	8.68617404841327e-4	lowcor	Hvu
