@@ -340,25 +340,29 @@ pap_kaks <- pairs2kaks(
 )$pap
 ```
 
-Finally, we will use Ks values to split gene pairs by age groups, so that
+Then, we will use Ks values to split gene pairs by age groups, so that
 age is not a confounder when performing comparisons between duplication modes.
 Here, we will not use pairs with $K_s>2$ to avoid saturation at greater
 $K_s$ values. Based on previous literature, we will set pre-defined 
 numbers of $K_s$ peaks, which are:
 
 1. *Glycine max*: 2 peaks at $K_s$ ~0.1 and ~0.56.
-2. *Zea mays*: 1 peak at $K_s$ ~0.16.
-3. *Arabidopsis thaliana*: 1 peak at $K_s$ ~0.73.
+2. *Zea mays*: 2 peaks at $K_s$ ~0.16 and 0.9. The second peak cannot be 
+distinguished from the $K_s$ distro of *Zea mays* because anchor pairs 
+originating from this ancient WGD event cannot be detected anymore. Hence,
+we calculated the mean of $K_s$ peaks estimates for all species in which
+this WGD event could be detected (N = 11), using data from 
+AngioWGD [@chen2024rise]. Following this approach, we will consider a peak at
+0.9 (0.51-1.89).
+3. *Arabidopsis thaliana*: 2 peaks at $K_s$ ~0.73 and 1.61. The second peak
+cannot be distinguished from the $K_s$ distro of *Arabidopsis thaliana* because
+peaks largely overlap. To distinguish between the two peaks, we used prior
+data from [@chen2024rise], which identified the second peak more clearly
+(1.61, 0.90-3.00) in the $K_s$ distro of *Cleome violacea*.
 4. *Phalaenopsis aphrodite*: 1 peak at $K_s$ ~1.5.
 5. *Hordeum vulgare*: 1 peak at $K_s$ ~0.8.
 
 ```{r}
-# First inspection to validate the number of peaks and where they are
-plot_ks_distro(gma_kaks, bytype = TRUE, type_levels = c("SD", "All"))
-plot_ks_distro(zma_kaks, bytype = TRUE, type_levels = c("SD", "All"))
-plot_ks_distro(ath_kaks, bytype = TRUE, type_levels = c("SD", "All"))
-plot_ks_distro(pap_kaks, bytype = TRUE, type_levels = c("SD", "All"))
-
 # Classify gene pairs by age groups
 ## G. max - 2 peaks
 gma_peaks <- gma_kaks |>
@@ -372,9 +376,10 @@ gma_spairs <- split_pairs_by_peak(gma_kaks, peaks = gma_peaks) |>
 
 ## Z. mays - 1 peak
 zma_peaks <- zma_kaks |>
+    filter(type == "SD") |>
     filter(Ks <=2) |>
     pull(Ks) |>
-    find_ks_peaks(npeaks = 1, max_ks = 1)
+    find_ks_peaks(npeaks = 2, max_ks = 2)
 
 zma_spairs <- split_pairs_by_peak(zma_kaks, peaks = zma_peaks) |>
     purrr::pluck(1) |>
@@ -382,9 +387,10 @@ zma_spairs <- split_pairs_by_peak(zma_kaks, peaks = zma_peaks) |>
 
 ## A. thaliana - 1 peak
 ath_peaks <- ath_kaks |>
-    filter(Ks <=2) |>
+    filter(Ks <=3.0, type == "SD") |>
     pull(Ks) |>
-    find_ks_peaks(npeaks = 1, max_ks = 1.5)
+    find_ks_peaks(npeaks = 2, max_ks = 3)
+ath_peaks$mean <- c(`1` = 0.73, `2` = 1.61)
 
 ath_spairs <- split_pairs_by_peak(ath_kaks, peaks = ath_peaks) |>
     purrr::pluck(1) |>
@@ -392,9 +398,9 @@ ath_spairs <- split_pairs_by_peak(ath_kaks, peaks = ath_peaks) |>
 
 ## P. aphrodite
 pap_peaks <- pap_kaks |>
-    filter(Ks <=2, type == "SD") |>
+    filter(Ks <=2.5) |>
     pull(Ks) |>
-    find_ks_peaks(npeaks = 1, max_ks = 2)
+    find_ks_peaks(npeaks = 1, max_ks = 2.5)
 
 pap_spairs <- split_pairs_by_peak(pap_kaks, peaks = pap_peaks) |>
     purrr::pluck(1) |>
@@ -419,6 +425,45 @@ pairs_byage <- list(
     hvu = hvu_spairs
 )
 ```
+
+Finally, we will classify SD pairs in WGD peaks as 'WGD'.
+
+```{r}
+# Relabel SD pairs in peaks as 'WGD'
+ath_wgd <- pairs_byage$ath |> filter(type == "SD")
+ath_wgd <- unique(c(ath_wgd$dup1, ath_wgd$dup1))
+ath_dups <- ath_dups |> mutate(type = ifelse(gene %in% ath_wgd, "WGD", type))
+
+gma_wgd <- pairs_byage$gma |> filter(type == "SD")
+gma_wgd <- unique(c(gma_wgd$dup1, gma_wgd$dup1))
+gma_dups <- gma_dups |> mutate(type = ifelse(gene %in% gma_wgd, "WGD", type))
+
+pap_wgd <- pairs_byage$pap |> filter(type == "SD")
+pap_wgd <- unique(c(pap_wgd$dup1, pap_wgd$dup1))
+pap_dups <- pap_dups |> mutate(
+    type = as.character(type),
+    type = ifelse(gene %in% pap_wgd, "WGD", type)
+)
+
+zma_wgd <- pairs_byage$zma |> filter(type == "SD")
+zma_wgd <- unique(c(zma_wgd$dup1, zma_wgd$dup1))
+zma_dups <- zma_dups |> mutate(type = ifelse(gene %in% zma_wgd, "WGD", type))
+
+hvu_wgd <- pairs_byage$hvu |> filter(type == "SD")
+hvu_wgd <- unique(c(hvu_wgd$dup1, hvu_wgd$dup1))
+hvu_dups <- hvu_dups |> mutate(type = ifelse(gene %in% hvu_wgd, "WGD", type))
+
+
+# Create a list with duplicate pairs and genes for each species
+dup_list <- list(
+    ath = list(pairs = ath_kaks, genes = ath_dups),
+    gma = list(pairs = gma_kaks, genes = gma_dups),
+    pap = list(pairs = pap_kaks, genes = pap_dups),
+    zma = list(pairs = zma_kaks, genes = zma_dups),
+    hvu = list(pairs = hvu_kaks, genes = hvu_dups)
+)
+```
+
 
 ## Obtaining gene family information
 
@@ -608,26 +653,17 @@ with elements `pairs` and `genes` containing the duplicate pairs and genes,
 respectively.
 
 ```{r}
-# Create a list with duplicate pairs and genes for each species
-dup_list <- list(
-    ath = list(pairs = ath_kaks, genes = ath_dups),
-    gma = list(pairs = gma_kaks, genes = gma_dups),
-    pap = list(pairs = pap_kaks, genes = pap_dups),
-    zma = list(pairs = zma_kaks, genes = zma_dups),
-    hvu = list(pairs = hvu_kaks, genes = hvu_dups)
-)
-
 # Save objects
 ## List with dup pairs (+ substitution rates) and genes for each species
 saveRDS(
     dup_list, compress = "xz",
-    file = here("products", "result_files", "dup_list.rds")
+    file = here("products", "result_files", "dup_list_expanded.rds")
 )
 
 ## Duplicate pairs classified by age groups
 saveRDS(
     pairs_byage, compress = "xz",
-    file = here("products", "result_files", "pairs_by_age_group.rds")
+    file = here("products", "result_files", "pairs_by_age_group_expanded.rds")
 )
 
 ## Gene family assignments
