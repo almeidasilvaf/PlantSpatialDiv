@@ -52,7 +52,20 @@ We will also need the duplicate pairs and genes obtained in chapter 2.
 
 ```{r}
 # Load duplicate pairs and genes
-dup_list <- readRDS(here("products", "result_files", "dup_list.rds"))
+dup_list <- readRDS(
+    here("products", "result_files", "dup_list_expanded.rds")
+)
+
+# Define color palette for duplication modes
+dup_pal <- c(
+    WGD = "#000000",  
+    SD = "#999999",
+    TD = "#E69F00",
+    PD = "#56B4E9",
+    rTRD = "#009E73",
+    dTRD = "#F0E442",
+    DD = "#0072B2"
+)
 ```
 
 ```{r}
@@ -109,7 +122,7 @@ sum_all <- Reduce(rbind, lapply(names(spe_all), function(x) {
     
     return(sum_df)
 })) |>
-    mutate(type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")))
+    mutate(type = factor(type, levels = names(dup_pal)))
 
 # Get mean of gene expression levels across all samples
 mean_all <- Reduce(rbind, lapply(names(spe_all), function(x) {
@@ -130,7 +143,7 @@ mean_all <- Reduce(rbind, lapply(names(spe_all), function(x) {
     
     return(mean_df)
 })) |>
-    mutate(type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")))
+    mutate(type = factor(type, levels = names(dup_pal)))
 ```
 
 Now, we will compare distributions using a Kruskal-Wallis test followed by a
@@ -200,7 +213,7 @@ mean_clds <- lapply(
 ## Sum
 p_sum_combined <- ggplot(sum_combined, aes(x = csum, y = type)) +
     geom_violin(aes(fill = type), show.legend = FALSE) +
-    scale_fill_manual(values = palette.colors()) +
+    scale_fill_manual(values = dup_pal) +
     geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
     geom_label(
         data = sum_clds,
@@ -240,7 +253,7 @@ p_sum_combined <- ggplot(sum_combined, aes(x = csum, y = type)) +
 ## Mean
 p_mean_combined <- ggplot(mean_combined, aes(x = cmean, y = type)) +
     geom_violin(aes(fill = type), show.legend = FALSE) +
-    scale_fill_manual(values = palette.colors()) +
+    scale_fill_manual(values = dup_pal) +
     geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
     geom_label(
         data = mean_clds, 
@@ -261,6 +274,8 @@ p_mean_combined <- ggplot(mean_combined, aes(x = cmean, y = type)) +
     ) +
     theme_classic() +
     theme(panel.background = element_rect(fill = bg))
+
+p_mean_combined
 ```
 
 ```{r}
@@ -273,7 +288,7 @@ p_mean_combined <- ggplot(mean_combined, aes(x = cmean, y = type)) +
 plots$mean_expression_by_duplication_mode
 ```
 
-The figures show that, overall, segmental, tandem, and proximal duplicates 
+The figures show that, overall, WGD, segmental, tandem, and proximal duplicates 
 display higher expression levels compared to duplicated originating from other 
 duplication modes, especially dispersed duplicates. In germinating
 barley seeds, however, retrotransposed duplicates display the highest 
@@ -341,7 +356,7 @@ eb <- prop_detected |>
     ) |>
     mutate(
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+        type = factor(type, levels = names(dup_pal))
     )
 ```
 
@@ -359,7 +374,7 @@ eb_test <- lapply(
     inner_join(
         data.frame(
             species = c("Ath", "Gma", "Pap", "Zma", "Hvu"),
-            x = c(5.5, 5.5, 2, 14, 16.5)
+            x = c(5.5, 5.5, 2, 13, 16.5)
         )
     ) |>
     mutate(species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))) |>
@@ -374,7 +389,7 @@ originating from different duplication modes.
 p_eb <- ggplot(eb, aes(x = n, y = type)) +
     geom_violin(aes(fill = type), show.legend = FALSE) +
     geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
-    scale_fill_manual(values = palette.colors()) +
+    scale_fill_manual(values = dup_pal) +
     geom_label(
         data = eb_test, 
         aes(x = x, y = type, label = Letter)
@@ -390,6 +405,8 @@ p_eb <- ggplot(eb, aes(x = n, y = type)) +
         x = "Number of cell types in which gene is detected",
         y = NULL
     )
+
+p_eb
 ```
 
 ```{r}
@@ -481,7 +498,8 @@ ora_svg_dup <- lapply(sp, function(x) {
     dplyr::select(species, sample, type = term, genes, all, padj)
 ```
 
-Interestingly, SVGs are enriched in SD-derived genes in most of the samples
+Interestingly, SVGs are enriched in large-scale duplication 
+(SD and WGD)-derived genes in most of the samples,
 and in TRD-derived genes in some samples, revealing an association between 
 these duplication modes and spatial variability in expression. 
 
@@ -501,7 +519,7 @@ get_dup_freqs <- function(svg_list, dup_df, ora_df) {
             mutate(
                 type = factor(
                     type, 
-                    levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")
+                    levels = names(dup_pal)
                 )
             ) |>
             dplyr::count(type, .drop = FALSE) |>
@@ -534,7 +552,7 @@ svg_dupmode_freqs <- lapply(sp, function(x) {
 }) |>
     bind_rows() |>
     mutate(
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+        type = factor(type, levels = names(dup_pal))
     ) |>
     distinct()
 ```
@@ -569,6 +587,8 @@ p_heatmap <- svg_dupmode_freqs |>
         subtitle = "Asterisks indicate significant overrepresentation",
         x = "Samples", y = NULL, fill = "Scaled counts"
     )
+
+p_heatmap
 ```
 
 ```{r}
