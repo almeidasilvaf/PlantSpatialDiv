@@ -338,6 +338,16 @@ pap_kaks <- pairs2kaks(
     cds = list(pap = pap_cds), 
     threads = 4
 )$pap
+
+
+# Create a list with duplicate pairs and genes for each species
+dup_list <- list(
+    ath = list(pairs = ath_kaks, genes = ath_dups),
+    gma = list(pairs = gma_kaks, genes = gma_dups),
+    pap = list(pairs = pap_kaks, genes = pap_dups),
+    zma = list(pairs = zma_kaks, genes = zma_dups),
+    hvu = list(pairs = hvu_kaks, genes = hvu_dups)
+)
 ```
 
 Then, we will use Ks values to split gene pairs by age groups, so that
@@ -426,44 +436,59 @@ pairs_byage <- list(
 )
 ```
 
-Finally, we will classify SD pairs in WGD peaks as 'WGD'.
+And finally, we will label peaks with the names of their corresponding WGDs
+(following AngioWGD nomenclature).
 
 ```{r}
-# Relabel SD pairs in peaks as 'WGD'
-ath_wgd <- pairs_byage$ath |> filter(type == "SD")
-ath_wgd <- unique(c(ath_wgd$dup1, ath_wgd$dup1))
-ath_dups <- ath_dups |> mutate(type = ifelse(gene %in% ath_wgd, "WGD", type))
+# Name peaks
+## Ath
+pairs_byage$ath <- pairs_byage$ath |>
+    mutate(
+        peak_name = case_when(
+            peak == 1 ~ "BRAS a",
+            peak == 2 ~ "BRAS b"
+        ),
+        peak_name = factor(peak_name, levels = c("BRAS a", "BRAS b"))
+    )
 
-gma_wgd <- pairs_byage$gma |> filter(type == "SD")
-gma_wgd <- unique(c(gma_wgd$dup1, gma_wgd$dup1))
-gma_dups <- gma_dups |> mutate(type = ifelse(gene %in% gma_wgd, "WGD", type))
+## Gma
+pairs_byage$gma <- pairs_byage$gma |>
+    mutate(
+        peak_name = case_when(
+            peak == 1 ~ "GLYC",
+            peak == 2 ~ "PAPI"
+        ),
+        peak_name = factor(peak_name, levels = c("GLYC", "PAPI"))
+    )
 
-pap_wgd <- pairs_byage$pap |> filter(type == "SD")
-pap_wgd <- unique(c(pap_wgd$dup1, pap_wgd$dup1))
-pap_dups <- pap_dups |> mutate(
-    type = as.character(type),
-    type = ifelse(gene %in% pap_wgd, "WGD", type)
-)
+## Pap
+pairs_byage$pap <- pairs_byage$pap |>
+    mutate(
+        peak_name = case_when(
+            peak == 1 ~ "ORCH"
+        ),
+        peak_name = factor(peak_name, levels = "ORCH")
+    )
 
-zma_wgd <- pairs_byage$zma |> filter(type == "SD")
-zma_wgd <- unique(c(zma_wgd$dup1, zma_wgd$dup1))
-zma_dups <- zma_dups |> mutate(type = ifelse(gene %in% zma_wgd, "WGD", type))
+## Zma
+pairs_byage$zma <- pairs_byage$zma |>
+    mutate(
+        peak_name = case_when(
+            peak == 1 ~ "ZEAM",
+            peak == 2 ~ "POAC"
+        ),
+        peak_name = factor(peak_name, levels = c("ZEAM", "POAC"))
+    )
 
-hvu_wgd <- pairs_byage$hvu |> filter(type == "SD")
-hvu_wgd <- unique(c(hvu_wgd$dup1, hvu_wgd$dup1))
-hvu_dups <- hvu_dups |> mutate(type = ifelse(gene %in% hvu_wgd, "WGD", type))
-
-
-# Create a list with duplicate pairs and genes for each species
-dup_list <- list(
-    ath = list(pairs = ath_kaks, genes = ath_dups),
-    gma = list(pairs = gma_kaks, genes = gma_dups),
-    pap = list(pairs = pap_kaks, genes = pap_dups),
-    zma = list(pairs = zma_kaks, genes = zma_dups),
-    hvu = list(pairs = hvu_kaks, genes = hvu_dups)
-)
+## Hvu
+pairs_byage$hvu <- pairs_byage$hvu |>
+    mutate(
+        peak_name = case_when(
+            peak == 1 ~ "POAC"
+        ),
+        peak_name = factor(peak_name, levels = "POAC")
+    )
 ```
-
 
 ## Obtaining gene family information
 
@@ -657,7 +682,7 @@ respectively.
 ## List with dup pairs (+ substitution rates) and genes for each species
 saveRDS(
     dup_list, compress = "xz",
-    file = here("products", "result_files", "dup_list_expanded.rds")
+    file = here("products", "result_files", "dup_list.rds")
 )
 
 ## Duplicate pairs classified by age groups

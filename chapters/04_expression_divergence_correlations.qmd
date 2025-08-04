@@ -56,7 +56,19 @@ dup_pairs <- readRDS(here("products", "result_files", "dup_list.rds"))
 dup_pairs <- lapply(dup_pairs, function(x) return(x$pairs))
 
 # Read duplicated gene pairs with age-based group classifications
-pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
+pairs_age <- readRDS(
+    here("products", "result_files", "pairs_by_age_group_expanded.rds")
+)
+
+# Define color palette for duplication modes
+dup_pal <- c(
+    SD = "#000000",  
+    TD = "#E69F00",
+    PD = "#56B4E9",
+    rTRD = "#009E73",
+    dTRD = "#F0E442",
+    DD = "#0072B2"
+)
 ```
 
 We will also load gene family assignments from PLAZA, as well as functional
@@ -279,7 +291,10 @@ separately for each age group.
 
 # Add age group info to pairs
 rho_metaspots_age <- lapply(seq_along(rho_metaspots), function(x) {
-    return(pairs_age[[x]] |> dplyr::inner_join(rho_metaspots[[x]]))
+    return(
+        pairs_age[[x]] |> 
+            dplyr::inner_join(rho_metaspots[[x]])
+    )
 })
 names(rho_metaspots_age) <- names(rho_metaspots)
 
@@ -300,6 +315,7 @@ compare_cors <- function(rho_df) {
         cld <- cld_kw_dunn(fdf, value = "cor")
         cld$sample <- unique(fdf$sample)
         cld$peak <- unique(fdf$peak)
+        cld$peak_name <- unique(fdf$peak_name)
         
         return(cld)
     }))
@@ -316,7 +332,7 @@ comp_metaspots <- bind_rows(
     compare_cors(rho_metaspots_age$pap) |> mutate(species = "Pap"),
     compare_cors(rho_metaspots_age$zma) |> mutate(species = "Zma"),
     compare_cors(rho_metaspots_age$hvu) |> mutate(species = "Hvu")
-) 
+)
 ```
 
 Now, we will visualize results with a heatmap showing CLDs for all samples.
@@ -324,15 +340,11 @@ Now, we will visualize results with a heatmap showing CLDs for all samples.
 ```{r}
 # Plot heatmap with CLDs
 p_heatmap_rho <- comp_metaspots |>
-    mutate(
-        Group = factor(
-            Group, levels = rev(c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
-        )
-    ) |>
+    mutate(Group = factor(Group, levels = rev(names(dup_pal)))) |>
     ggplot(aes(x = sample, y = Group, fill = Letter)) +
     geom_tile(color = "gray90", linewidth = 0.8, alpha = 0.7) +
     geom_text(aes(label = Letter), size = 3) +
-    ggh4x::facet_nested(~ species + peak, scales = "free", space = "free") +
+    ggh4x::facet_nested(~ species + peak_name, scales = "free", space = "free") +
     theme_classic() +
     theme(
         axis.text.x = element_blank(),
@@ -384,10 +396,11 @@ zrho_mean <- bind_rows(rho_metaspots_age, .id = "species") |>
     mutate(
         species = str_to_title(species),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        type = factor(type, levels = names(dup_pal)),
         peak = as.character(peak)
     ) |>
     dplyr::select(-c(sample, cor, pair))
+
 
 # Compare distributions
 zrho_cld <- lapply(
@@ -400,20 +413,24 @@ zrho_cld <- lapply(
     mutate(
         species = str_to_title(species),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        type = factor(type, levels = names(dup_pal)),
         peak = as.character(peak)
-    )
+    ) |>
+    left_join(zrho_mean |> select(species, peak, peak_name) |> distinct())
+    
 
 # Plot distributions with CLDs
-p_zrho_mean <- ggplot(zrho_mean, aes(x = mean_cor, y = type)) +
+p_zrho_mean <- zrho_mean |>
+    filter(mean_cor != Inf, !is.na(mean_cor)) |>
+    ggplot(aes(x = mean_cor, y = type)) +
     geom_violin(aes(fill = type), scale = "width", show.legend = FALSE) +
-    scale_fill_manual(values = palette.colors()) +
+    scale_fill_manual(values = dup_pal) +
     geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
     geom_label(
         data = zrho_cld,
-        aes(x = 0.9, y = type, label = Letter)
+        aes(x = 0.8, y = type, label = Letter)
     ) +
-    ggh4x::facet_nested(~ species + peak, scales = "free", space = "free") +
+    ggh4x::facet_nested(~ species + peak_name, scales = "free", space = "free") +
     labs(
         x = expression("Fisher's z-transformed" ~ rho), 
         y = NULL,
@@ -423,6 +440,8 @@ p_zrho_mean <- ggplot(zrho_mean, aes(x = mean_cor, y = type)) +
     scale_x_continuous(limits = c(-0.5, 1)) +
     theme_classic() +
     theme(panel.background = element_rect(fill = bg))
+
+p_zrho_mean
 ```
 
 ```{r}
@@ -436,23 +455,18 @@ plots$mean_zrho_comp
 ```
 
 The figure shows that differences in gene-gene correlations by duplication mode
-exist, but not for all species. For Arabidopsis, maize, and 
+exist, but not for all species. For maize and 
 younger soybean duplicates, segmental and proximal duplicates (and 
 tandem duplicates in case of maize) are more similar
 than duplicates derived from other modes. In *Phalaenopsis sp.*, barley, 
-and older soybean duplicates, there are no differences in correlations 
-by duplication mode. Interestingly, there seems to be an effect of duplicate 
-age on differences. For instance, in soybean, younger duplicates differ in correlations based on their duplication mode, but not older ones. Likewise,
-(young) maize duplicates (originated at ~16 MYA) differ in correlations
-based on duplication modes, but not barley duplicates, which are much 
-older (originated at ~53 MYA). The age of duplicates could also explain
+Arabidopsis, and older soybean duplicates, there are no differences in 
+correlations by duplication mode. Interestingly, there seems to be an effect 
+of duplicate age on differences. For instance, in soybean, younger 
+duplicates differ in correlations based on their duplication mode, but not older ones. Likewise, (young) maize duplicates (originated at ~16 MYA) differ in correlations based on duplication modes, but not barley duplicates, 
+which are much older (originated at ~53 MYA). Among more ancient maize
+duplicates, differences do exist, but seem to fade relative to younger 
+duplicates. The age of duplicates could also explain
 why orchid duplicates did not display differences in gene-gene correlations.
-An exception exists for Arabidopsis, whose duplicates display differences
-in correlations by duplication mode despite their old ages (~51 to 72 MYA).
-Such discrepancies could also be partially explained by tissue-specific 
-differences in expression divergence. For instance, duplicates
-originating from different modes might diverge differently in leaves (tissue
-profiled in the Arabidopsis data set), but not in other tissues.
 
 ## Frequency of pairs with significant expression preservation
 
@@ -561,20 +575,20 @@ pdata_preserved <- preserved |>
     mutate(
         ltype = ifelse(!is.na(padj), 1, 0),
         alpha = ifelse(!is.na(padj), 0.9, 0.2)
-    )
+    ) |>
+    left_join(preserved |> select(sample, peak, peak_name) |> distinct())
 
 
 # Create barplot
-p_preserved <- ggplot(
-    pdata_preserved, aes(x = sample, y = value)
-) +
+p_preserved <- pdata_preserved |>
+    ggplot(aes(x = sample, y = value)) +
     geom_bar(
         aes(fill = type, alpha = alpha),
         position = "stack", stat = "identity"
     ) +
     scale_alpha_identity() +
-    ggh4x::facet_nested(~ species + peak, scales = "free", space = "free") +
-    scale_fill_manual(values = palette.colors()) +
+    ggh4x::facet_nested(~ species + peak_name, scales = "free", space = "free") +
+    scale_fill_manual(values = dup_pal) +
     theme_classic() +
     scale_y_continuous(
         limits = c(0, 0.10), 

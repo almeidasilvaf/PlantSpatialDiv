@@ -53,13 +53,12 @@ We will also need the duplicate pairs and genes obtained in chapter 2.
 ```{r}
 # Load duplicate pairs and genes
 dup_list <- readRDS(
-    here("products", "result_files", "dup_list_expanded.rds")
+    here("products", "result_files", "dup_list.rds")
 )
 
 # Define color palette for duplication modes
 dup_pal <- c(
-    WGD = "#000000",  
-    SD = "#999999",
+    SD = "#000000",  
     TD = "#E69F00",
     PD = "#56B4E9",
     rTRD = "#009E73",
@@ -288,7 +287,7 @@ p_mean_combined
 plots$mean_expression_by_duplication_mode
 ```
 
-The figures show that, overall, WGD, segmental, tandem, and proximal duplicates 
+The figures show that, overall, segmental, tandem, and proximal duplicates 
 display higher expression levels compared to duplicated originating from other 
 duplication modes, especially dispersed duplicates. In germinating
 barley seeds, however, retrotransposed duplicates display the highest 
@@ -551,9 +550,7 @@ svg_dupmode_freqs <- lapply(sp, function(x) {
     return(df)
 }) |>
     bind_rows() |>
-    mutate(
-        type = factor(type, levels = names(dup_pal))
-    ) |>
+    mutate(type = factor(type, levels = names(dup_pal))) |>
     distinct()
 ```
 
