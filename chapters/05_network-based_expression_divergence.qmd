@@ -33,6 +33,16 @@ source(here("code", "utils.R"))
 
 # Plot background
 bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+
+# Define color palette for duplication modes
+dup_pal <- c(
+    SD = "#000000",  
+    TD = "#E69F00",
+    PD = "#56B4E9",
+    rTRD = "#009E73",
+    dTRD = "#F0E442",
+    DD = "#0072B2"
+)
 ```
 
 Now, let's load `SpatialExperiment` objects created in chapter 1.
@@ -55,7 +65,9 @@ obtained in chapter 2.
 dup_pairs <- readRDS(here("products", "result_files", "dup_list.rds"))
 
 # Read duplicated gene pairs with age-based group classifications
-pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
+pairs_age <- readRDS(
+    here("products", "result_files", "pairs_by_age_group_expanded.rds")
+)
 ```
 
 ```{r}
@@ -305,11 +317,14 @@ for each species.
 pdata <-  prop_div |>
     mutate(group = str_c(species_peak, type, sep = "_")) |>
     separate_wider_delim(species_peak, delim = "_", names = c("species", "peak")) |>
-    mutate(
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+    left_join(
+        mod_comps |> select(species, peak, peak_name) |> 
+            distinct() |>
+            mutate(peak = as.character(peak))
     ) |>
+    mutate(type = factor(type, levels = names(dup_pal))) |>
     left_join(pvals, by = "group") |>
-    dplyr::select(species, peak, type, prop_div, slabel) |>
+    dplyr::select(species, peak_name, type, prop_div, slabel) |>
     mutate(
         prop = signif(prop_div, 2),
         lab = case_when(
@@ -322,7 +337,7 @@ pdata <-  prop_div |>
 p_diverged_gcn <- pdata |>
     ggplot(aes(x = prop_div, y = type, fill = type)) +
     geom_bar(stat = "identity", color = "gray20") +
-    ggh4x::facet_nested(~species + peak, scales = "free_x") +
+    ggh4x::facet_nested(~species + peak_name, scales = "free_x") +
     geom_text(aes(x = 0.1, label = lab, color = type), hjust = 0, size = 4) +
     scale_color_manual(values = c("gray90", rep("gray10", 4), "gray90")) +
     scale_fill_manual(values = palette.colors()) +
@@ -384,7 +399,7 @@ me_dist <- lapply(sp, function(x) {
 }) |>
     bind_rows() |>
     mutate(
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        type = factor(type, levels = names(dup_pal)),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
     )
 
@@ -452,7 +467,7 @@ degree_dup <- lapply(sp, function(x) {
 }) |> 
     bind_rows() |>
     mutate(
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        type = factor(type, levels = names(dup_pal)),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
     )
 
@@ -545,7 +560,7 @@ hubs_dup <- lapply(sp, function(x) {
     bind_rows() |>
     dplyr::select(species, type = term, genes, all, padj) |>
     mutate(
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        type = factor(type, levels = names(dup_pal)),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
     )
 

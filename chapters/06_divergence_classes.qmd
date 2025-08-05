@@ -30,6 +30,16 @@ source(here("code", "utils.R"))
 
 # Plot background
 bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+
+# Define color palette for duplication modes
+dup_pal <- c(
+    SD = "#000000",  
+    TD = "#E69F00",
+    PD = "#56B4E9",
+    rTRD = "#009E73",
+    dTRD = "#F0E442",
+    DD = "#0072B2"
+)
 ```
 
 We will also load some required objects created in previous chapters.
@@ -52,7 +62,9 @@ spe_all <- list(
 )
 
 # Read duplicated gene pairs with age-based group classifications
-pairs_age <- readRDS(here("products", "result_files", "pairs_by_age_group.rds"))
+pairs_age <- readRDS(
+    here("products", "result_files", "pairs_by_age_group_expanded.rds")
+)
 ```
 
 ```{r}
@@ -150,7 +162,7 @@ mean_rebs <- rebs |>
     mutate(
         species_peak = str_c(species, peak, sep = " - peak "),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
-        type = factor(type, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD"))
+        type = factor(type, levels = names(dup_pal))
     )
 ```
 
@@ -168,7 +180,7 @@ p_mean_reb <- ggplot(mean_rebs, aes(x = mean_reb1, y = mean_reb2)) +
     scale_fill_gradient(low = "#F7FBFF", high = "#08519C") +
     ggh4x::facet_nested(
         cols = vars(type),
-        rows = vars(species, peak)
+        rows = vars(species, peak_name)
     ) +
     scale_x_continuous(
         limits = c(0, 1), breaks = seq(0, 1, 0.5), labels = c(0, 0.5, 1), expand = c(0, 0)
@@ -294,15 +306,19 @@ p_reb_classes <- ora_dupmode_class |>
         peak = str_replace_all(species_peak, ".* - peak ", ""),
         species = str_replace_all(species_peak, " - .*", ""),
         species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu")),
-        term = factor(term, levels = c("SD", "TD", "PD", "rTRD", "dTRD", "DD")),
+        term = factor(term, levels = names(dup_pal)),
         class = factor(class, levels = c("Redundancy", "Symmetric", "Asymmetric"))
+    ) |>
+    left_join(
+        reb_classes |> select(species, peak, peak_name) |>
+            distinct() |> mutate(peak = as.character(peak))
     ) |>
     ggplot(aes(x = term, y = class)) +
     geom_tile(aes(fill = genes)) +
     scale_fill_gradient(low = "#E5F5E0", high = "#006D2C") +
     geom_text(aes(label = symbol)) +
     ggh4x::facet_nested(
-        cols = vars(species, peak)
+        cols = vars(species, peak_name)
     ) +
     theme_classic() +
     labs(
@@ -352,7 +368,10 @@ saveRDS(
 ## Smoothed densities of relative expression breadths
 saveRDS(
     p_mean_reb, compress = "xz",
-    file = here("products", "plots", "smoothed_densities_relative_expression_breadth.rds")
+    file = here(
+        "products", "plots", 
+        "smoothed_densities_relative_expression_breadth.rds"
+    )
 )
 
 ## ORA - duplication mode and divergence classes
