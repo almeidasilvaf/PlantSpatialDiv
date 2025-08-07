@@ -166,7 +166,12 @@ for(i in seq_len(nrow(wgd_pos))) {
 fig2 <- wrap_plots(
     wrap_plots(
         p_tree_final, 
-        plots$mean_zrho_comp, 
+        plots$mean_zrho_comp +
+            scale_x_continuous(
+                limits = c(-0.5, 1),
+                breaks = c(-0.5, 0, 0.5, 1), 
+                labels = c("", 0, 0.5, "")
+            ), 
         widths = c(0.35, 0.65), ncol = 2
     ),
     plots$IQR_rho_per_gene_family, 
@@ -199,9 +204,12 @@ ggsave(
 )
 
 # Figure 4: REB-based divergence classes ----
+f42 <- plots$ORA_dupmode_and_divergence_class
+f42$data$symbol <- ifelse(f42$data$symbol != "", "*", "")
+
 fig4 <- wrap_plots(
     plots$smoothed_densities_relative_expression_breadth,
-    plots$ORA_dupmode_and_divergence_class +
+    f42 +
         theme(
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
             legend.position = "right"
@@ -272,7 +280,6 @@ ggsave(
 )
 
 
-
 # PDF to PNG ---------------------------------------------
 pdf_files <- list.files(
     here("products", "figs"), pattern = ".pdf", full.names = TRUE
@@ -283,6 +290,5 @@ write <- lapply(seq_along(pdf_figs), function(x) {
     w <- magick::image_write(pdf_figs[[x]], path = fname, density = 300)
     return(w)
 })
-
 
 
