@@ -1,0 +1,386 @@
+---
+execute: 
+  echo: true
+  eval: false
+  warning: false
+---
+
+# Motif-based promoter similarities between paralogs
+
+Here, we will quantify similarities between promoters of paralogous genes.
+Our goal is to better understand how different duplication modes preserve
+cis-regulatory landscapes.
+
+We will start by loading the required packages.
+
+```{r here}
+#| message: false
+#| eval: true
+
+library(here)
+library(Biostrings)
+library(GenomicRanges)
+library(monaLisa)
+library(JASPAR2024)
+library(TFBSTools)
+library(tidyverse)
+
+set.seed(123) # for reproducibility
+options(timeout = 1e6) # to download large data files
+
+# Load helper functions
+source(here("code", "utils.R"))
+
+# Plot background
+bg <- grid::linearGradient(colorRampPalette(c("gray90", "white"))(100))
+
+# Define color palette for duplication modes
+dup_pal <- c(
+    SD = "#000000",  
+    TD = "#E69F00",
+    PD = "#56B4E9",
+    rTRD = "#009E73",
+    dTRD = "#F0E442",
+    DD = "#0072B2"
+)
+```
+
+We will also load some required objects created in previous chapters.
+
+```{r}
+# Read duplicated gene pairs with age-based group classifications
+pairs_age <- readRDS(
+    here("products", "result_files", "pairs_by_age_group_expanded.rds")
+)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+
+# Load pre-computed plots to display after they are created
+f <- list.files(here("products", "plots"), full.names = TRUE)
+f <- f[!grepl("one_slide_per", f)]
+plots <- lapply(f, readRDS)
+names(plots) <- gsub("\\.rds", "", basename(f))
+```
+
+## Obtaning promoter sequences
+
+We will first obtain promoter sequences, hereafter defined as the genomic
+intervals between -1000 bp and +200 bp.
+
+```{r}
+# Define paths to data files
+data_list <- list(
+    ath = c(
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna_rm.toplevel.fa.gz",
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/gff3/arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.61.gff3.gz"
+    ),
+    gma = c(
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/fasta/glycine_max/dna/Glycine_max.Glycine_max_v2.1.dna_rm.toplevel.fa.gz",
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/gff3/glycine_max/Glycine_max.Glycine_max_v2.1.61.gff3.gz"
+    ),
+    pap = c(
+        "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0.fa.gz",
+        "https://orchidstra2.abrc.sinica.edu.tw/orchidstra2/pagenome/padownload/P_aphrodite_genomic_scaffold_v1.0_gene.gff.gz"
+    ),
+    zma = c(
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/fasta/zea_mays/dna/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.dna_rm.toplevel.fa.gz",
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/gff3/zea_mays/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.61.gff3.gz"
+    ),
+    hvu = c(
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/fasta/hordeum_vulgare/dna/Hordeum_vulgare.MorexV3_pseudomolecules_assembly.dna_rm.toplevel.fa.gz",
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-61/plants/gff3/hordeum_vulgare/Hordeum_vulgare.MorexV3_pseudomolecules_assembly.61.gff3.gz"
+    )
+)
+
+# Get promoter sequences based on genome and annotation
+prom_seqs <- lapply(seq_along(data_list), function(n) {
+    
+    sp <- names(data_list)[n]
+    
+    # Load genome and annotation
+    genome <- readDNAStringSet(data_list[[sp]][1])
+    names(genome) <- gsub(" .*", "", names(genome))
+    
+    annot <- rtracklayer::import(data_list[[sp]][2])
+    
+    # Process annotation
+    annot <- annot[annot$type == "gene"]
+    sl <- setNames(width(genome), names(genome))
+    sl <- sl[seqlevels(annot)]
+    seqlengths(annot) <- sl
+    
+    ## Extract promoter sequences
+    prom_ranges <- trim(promoters(annot, 1000, 200))
+    prom_seqs <- BSgenome::getSeq(genome, prom_ranges)
+    if(sp == "pap") {
+        names(prom_seqs) <- prom_ranges$ID
+    } else {
+        names(prom_seqs) <- prom_ranges$gene_id
+    }
+    
+    ## Keep only duplicated genes
+    sel_genes <- unique(c(pairs_age[[sp]]$dup1, pairs_age[[sp]]$dup2))
+    prom_seqs <- prom_seqs[sel_genes]
+    
+    fpath <- tempfile(fileext = ".fa.gz")
+    writeXStringSet(prom_seqs, filepath = fpath)
+    fprom_seqs <- readDNAStringSet(fpath)
+    
+    unlink(fpath)
+    
+    return(fprom_seqs)
+})
+names(prom_seqs) <- names(data_list)
+```
+
+## Annotating promoter sequences with TFBMs
+
+First, we will obtain non-redundant plant TFBMs from 
+JASPAR2024 [@rauluseviciute2024jaspar].
+
+```{r}
+# Retrieve data from JASPAR2024 ----
+js24 <- RSQLite::dbConnect(RSQLite::SQLite(), db(JASPAR2024()))
+
+## PWMs and PFMs ----
+unopts <- list(collection = "CORE", tax_group = "plants")
+pwms <- getMatrixSet(js24, opts = c(unopts, matrixtype = "PWM"))
+
+## Metadata ----
+motif_meta <- Reduce(rbind, lapply(pwms, function(x) {
+    df <- tryCatch(
+        data.frame(
+            id = ID(x),
+            name = name(x),
+            family = tags(x)$family,
+            class = matrixClass(x),
+            species = unname(tags(x)$species)
+        ),
+        error = function(e) return(NULL)
+    )
+    return(df)
+}))
+
+## Pairwise motif comparisons
+motif_comp <- read_tsv(
+    "https://jaspar.elixir.no/static/clustering/2024/plants/CORE/interactive_trees/pairwise_comparisons.tab", show_col_types = FALSE, skip = 1
+) |>
+    as.data.frame() |>
+    mutate(
+        id1 = str_replace_all(`#id1`, ".*_CORE_", ""),
+        id1 = str_replace_all(id1, "_n.*", ""),
+        id2 = str_replace_all(id2, ".*_CORE_", ""),
+        id2 = str_replace_all(id2, "_n.*", "")
+    ) |>
+    select(id1, id2, cor) 
+
+comp_mat <- motif_comp |>
+    igraph::graph_from_data_frame() |>
+    igraph::as_adjacency_matrix(attr = "cor") |>
+    as.matrix()
+
+# Remove redundancy (similarity >0.9)
+tf_fams <- unique(motif_meta$family)
+nr_motifs <- Reduce(rbind, lapply(tf_fams, function(x) {
+   
+    ## Get similarity matrix with selected motifs only
+    sel <- motif_meta |> filter(family == x) |> pull(id)
+    
+    mclusters <- setNames(rep(1, length(sel)), sel)
+    if(length(sel) >1) {
+        fmat <- comp_mat[sel, sel]
+        
+        ## Get clusters
+        mclusters <- hclust(as.dist(1 - fmat))
+        mclusters <- cutree(mclusters, h = 0.1)
+    }
+
+    df <- data.frame(
+        id = names(mclusters),
+        cluster = paste0(x, "_", mclusters),
+        family = x
+    ) |>
+        arrange(cluster)
+    
+    return(df)
+})) |>
+    distinct(cluster, .keep_all = TRUE) |>
+    pull(id)
+
+fpwms <- pwms[nr_motifs]
+```
+
+Now, we will annotate promoters with motifs.
+
+```{r}
+# Find motif hits
+motif_hits <- lapply(prom_seqs, function(x) {
+    return(
+        findMotifHits(
+            query = fpwms,
+            subject = x,
+            min.score = "90%",
+            method = "matchPWM"
+        ) |>
+            as.data.frame()
+    )
+})
+```
+
+## Calculating promoter similarity between paralogs
+
+Now that we have a data frame summarizing what TFBMs are found in promoters
+of all duplicated genes, we will calculate Sorensen-Dice similarities 
+(single and multiset) between paralogs.
+
+```{r}
+paralogs <- pairs_age$hvu
+
+# Calculate single and multiset Sorensen-Dice similarities
+paralogs_sim <- lapply(names(motif_hits), function(sp) {
+    
+    paralogs <- pairs_age[[sp]]
+    ms_sdice <- lapply(seq_len(nrow(paralogs)), function(n) {
+        
+        m1 <- motif_hits[[sp]] |> filter(seqnames == paralogs[n, 1]) |> pull(pwmid)
+        m2 <- motif_hits[[sp]] |> filter(seqnames == paralogs[n, 2]) |> pull(pwmid)
+        
+        ## Single Sorensen-Dice similarity
+        m1u <- unique(m1)
+        m2u <- unique(m2)
+        sd_single <- 2 * length(intersect(m1u, m2u)) / (length(m1u) + length(m2u))
+        
+        ## Multiset Sorensen-Dice similarity
+        tab1 <- table(m1)
+        tab2 <- table(m2)
+        common <- intersect(names(tab1), names(tab2))
+        int_count <- sum(pmin(tab1[common], tab2[common]))
+        sd_multi <- 2 * int_count / (length(m1) + length(m2))
+        
+        df_sim <- data.frame(sd_single = sd_single, sd_multi = sd_multi)
+        return(df_sim)
+    }) |> 
+        bind_rows() |>
+        mutate(species = sp)
+    
+    paralogs_final <- cbind(paralogs, ms_sdice)
+    
+    return(paralogs_final)
+}) |>
+    bind_rows() |>
+    mutate(species_peak = str_c(species, peak_name, sep = "_"))
+```
+
+Then, we will visualize a distribution of promoter similarities by
+duplication modes.
+
+```{r}
+# Compare distros and get CLDs
+cld_df <- lapply(
+    split(paralogs_sim, paralogs_sim$species_peak),
+    cld_kw_dunn, value = "sd_multi"
+) |>
+    bind_rows(.id = "species_peak") |>
+    separate_wider_delim(species_peak, "_", names = c("species", "peak_name")) |>
+    mutate(
+        type = factor(Group, levels = names(dup_pal)),
+        species = str_to_title(species),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    )
+    
+# Plot violin + boxplots with CLDs
+p_prom_sim <- paralogs_sim |>
+    mutate(
+        species = str_to_title(species),
+        species = factor(species, levels = c("Ath", "Gma", "Pap", "Zma", "Hvu"))
+    ) |>
+    ggplot(aes(x = sd_multi, y = type)) +
+    geom_violin(aes(fill = type)) +
+    scale_fill_manual(values = dup_pal) +
+    geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+    geom_label(
+        data = cld_df,
+        aes(x = 0.85, y = type, label = Letter)
+    ) +
+    ggh4x::facet_nested(
+        cols = vars(species, peak_name), space = "free"
+    ) +
+    scale_x_continuous(
+        limits = c(0, 1), breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1")
+    ) +
+    theme_classic() +
+    theme(
+        panel.background = element_rect(fill = bg), legend.position = "none"
+    ) +
+    labs(
+        title = "Motif-based promoter similarities between paralogs",
+        x = "Similarity", y = "Mode"
+    )
+
+p_prom_sim
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| fig-width: 8
+#| fig-height: 4
+#| fig-dpi: 300
+
+plots$promoter_similarity_distros +
+    labs(
+        title = "Motif-based promoter similarities between paralogs",
+        x = "Similarity", y = "Mode"
+    )
+```
+
+The figure shows that SD, TD, and PD duplicates display higher motif 
+similarities, as expected. However, it's also important to note that
+promoters of dTRD duplicates are often more similar than promoters of DD
+and rTRD duplicates, indicating that gene duplication through DNA 
+transpositions can preserve cis-regulatory landscapes to some extent 
+(possibly by copying genes and a fraction of the promoter sequences), 
+although not at the same level of SD and TD.
+
+## Saving objects {.unnumbered}
+
+Finally, we will save important objects to reuse later.
+
+```{r}
+#| eval: false
+
+# Objects
+## List of data frames with motif hits in promoters
+saveRDS(
+    motif_hits, compress = "xz",
+    file = here("products", "result_files", "motif_hits_promoters.rds")
+)
+
+## Data frame of TFBM-based promoter similarities
+saveRDS(
+    paralogs_sim, compress = "xz",
+    file = here("products", "result_files", "promoter_similarities.rds")
+)
+
+# Plots
+## Distribution of promoter similarities
+saveRDS(
+    p_prom_sim, compress = "xz",
+    file = here("products", "plots", "promoter_similarity_distros.rds")
+)
+```
+
+## Session info {.unnumbered}
+
+This document was created under the following conditions:
+
+```{r sessioninfo}
+#| eval: true
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}

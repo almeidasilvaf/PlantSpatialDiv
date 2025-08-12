@@ -20,6 +20,7 @@ book:
     - chapters/04_expression_divergence_correlations.qmd
     - chapters/05_network-based_expression_divergence.qmd
     - chapters/06_divergence_classes.qmd
+    - chapters/07_cre_similarity.qmd
 
 bibliography: bibliography.bib
 
