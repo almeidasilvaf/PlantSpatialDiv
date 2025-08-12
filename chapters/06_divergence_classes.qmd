@@ -347,8 +347,177 @@ plots$ORA_dupmode_and_divergence_class +
 
 The figure shows that most pairs derived from small-scale duplications (TD, PD,
 TRD, and DD) are overrepresented in pairs with asymmetric divergence. Segmental
-duplicates (and sometimes transposed duplicates) are mostly overrepresented
-in pairs that display redundancy and symmetric divergence.
+duplicates and DNA transposed duplicates are mostly overrepresented
+in pairs that display redundancy and/or symmetric divergence.
+
+## Do dTRD duplicates display signs of compensatory drift?
+
+Preservation of cis-regulatory landscapes is a quite intuitive mechanism
+underlying paralog redundancy, and it can explain why segmental duplicates 
+typically become redundant redundancy. However, this is not the only mechanism.
+Another established hypothesis to explain paralog redundancy relies on the
+concept of compensatory drift. That is, one copy drifts to lower expression
+levels, while the other gains higher expression that enables the pair
+to maintain constant total expression. Here, we will test whether 
+dTRD duplicates (which also display redundancy) show any signs of compensatory
+drift. 
+
+To do that, we will calculate differences in total expression levels
+for each gene pair across cell types. If differences between dTRD
+duplicates are greater than differences between other duplicates, this would
+suggest that dTRD underwent compensatory drift.
+
+```{r}
+# Define helper function to get differences in expression across cell types
+exp_diff_cell <- function(spe_list, pairs, cell_type = "cell_type") {
+    
+    # Get sums across cell types
+    exp_sum <- lapply(spe_list, function(spe) {
+        return(
+            scuttle::aggregateAcrossCells(
+                spe, 
+                ids = spe[[cell_type]],
+                statistics = "sum",
+                use.assay.type = "logcounts"
+            ) |>
+                assay() |>
+                as.data.frame() |>
+                tibble::rownames_to_column("gene") |>
+                pivot_longer(
+                    names_to = "cell_type",
+                    values_to = "sum_exp",
+                    cols = -gene
+                ) |>
+                as.data.frame()
+        )
+    }) |>
+        bind_rows(.id = "sample") |>
+        group_by(gene, cell_type) |> 
+        summarise(mean_sums = mean(sum_exp, na.rm = TRUE)) |>
+        ungroup() |>
+        pivot_wider(
+            names_from = cell_type, 
+            values_from = mean_sums
+        ) |>
+        column_to_rownames("gene") |>
+        as.matrix()
+    
+    # For each pair, get difference for each cell type
+    diffs <- lapply(seq_len(nrow(pairs)), function(n) {
+        
+        genes <- c(pairs$dup1[n], pairs$dup2[n])
+        fpairs <- NULL
+        if(all(genes %in% rownames(exp_sum))) {
+            dif_vec <- apply(exp_sum[genes, ], 2, function(x) abs(x[1] - x[2]))
+            fpairs <- cbind(pairs[n, ], t(dif_vec))
+        }
+        
+        return(fpairs)
+    }) |>
+        bind_rows()
+    
+    return(diffs)
+}
+
+# Get differences across cell types
+pairs_diffs <- list(
+    Ath = exp_diff_cell(spe_all$ath, pairs_age$ath),
+    Gma = exp_diff_cell(spe_all$gma, pairs_age$gma, "annotation"),
+    Pap = exp_diff_cell(spe_all$pap, pairs_age$pap, "clusters"),
+    Zma = exp_diff_cell(spe_all$zma, pairs_age$zma, "cell_type"),
+    Hvu = exp_diff_cell(spe_all$hvu, pairs_age$hvu, "tissue")
+)
+
+diffs_long <- lapply(pairs_diffs, function(x) {
+    x |>
+        select(type, peak_name, 6:ncol(x)) |>
+        pivot_longer(
+            names_to = "cell_type", values_to = "diff", 
+            cols = -c(type, peak_name)
+        ) |>
+        mutate(
+            diff = log2(diff + 1),
+            type = factor(type, levels = names(dup_pal))
+        )
+}) |>
+    bind_rows(.id = "species") |>
+    mutate(
+        species_peak = str_c(species, peak_name, sep = "__"),
+        species_peak_celltype = str_c(species, peak_name, cell_type, sep = "__")
+    )
+```
+
+Next, we will visualize distributions of differences by cell type.
+
+```{r}
+# Get CLDs
+clds <- lapply(
+    split(diffs_long, diffs_long$species_peak_celltype),
+    cld_kw_dunn, value = "diff"
+) |>
+    bind_rows(.id = "species_peak_celltype") |>
+    separate_wider_delim(
+        cols = species_peak_celltype, delim = "__", 
+        names = c("species", "peak_name", "cell_type")
+    ) |>
+    mutate(
+        species_peak = str_c(species, peak_name, sep = "__"),
+        type = factor(Group, levels = names(dup_pal))
+    )
+
+# Create one plot for each species and peak
+speaks <- unique(clds$species_peak)
+p_diffs <- lapply(speaks, function(x) {
+    
+    p <- diffs_long |>
+        filter(species_peak == x) |>
+        ggplot(aes(x = diff, y = type)) +
+        geom_violin(aes(fill = type)) +
+        scale_fill_manual(values = dup_pal) +
+        geom_boxplot(width = 0.1, outlier.color = "gray60", outlier.alpha = 0.5) +
+        geom_label(
+            data = clds |> filter(species_peak == x),
+            aes(x = 8, y = Group, label = Letter)
+        ) +
+        scale_x_continuous(limits = c(0, 10), breaks = c(0, 5, 10)) +
+        facet_wrap(vars(cell_type)) +
+        theme_classic() +
+        theme(
+            panel.background = element_rect(fill = bg),
+            legend.position = "none"
+        ) +
+        labs(
+            title = "Expression differences between paralogs"
+        )
+    
+    return(p)
+})
+names(p_diffs) <- speaks
+
+quartose::quarto_tabset(
+    content = p_diffs,
+    names = gsub("__", " - ", names(p_diffs)), 
+    level = 3
+)
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| results: asis
+
+quartose::quarto_tabset(
+    content = plots$expression_differences_paralogs,
+    names = gsub("__", " - ", names(plots$expression_differences_paralogs)), 
+    level = 3
+)
+```
+
+Strikingly, expression differences between paralogs created by DNA 
+tranpositions are consistently larger than differences between paralogs
+originating from all other duplication modes. This finding provides strong
+support for compensatory drift as a mechanism driving redundancy among dTRD
+duplicates.
 
 ## Saving objects {.unnumbered}
 
@@ -362,6 +531,12 @@ Finally, we will save important objects to reuse later.
 saveRDS(
     rebs, compress = "xz",
     file = here("products", "result_files", "relative_expression_breadth.rds")
+)
+
+## Expression differences between paralogs
+saveRDS(
+    pairs_diffs, compress = "xz",
+    file = here("products", "result_files", "paralog_expression_diffs_wide.rds")
 )
 
 # Plots
@@ -378,6 +553,12 @@ saveRDS(
 saveRDS(
     p_reb_classes, compress = "xz",
     file = here("products", "plots", "ORA_dupmode_and_divergence_class.rds")
+)
+
+## List of plots with expression differences between paralogs
+saveRDS(
+    p_diffs, compress = "xz",
+    file = here("products", "plots", "expression_differences_paralogs.rds")
 )
 ```
 
