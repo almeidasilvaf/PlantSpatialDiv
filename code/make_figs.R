@@ -259,24 +259,134 @@ ggsave(
     file = here("products", "figs", "Sup_Figure_01.pdf")
 )
 
-# Fig. S2: gene-gene correlations for increasingly large metaspots ----
+# Fig. S2: promoter similarities between paralogs ----
 ## Create figure
-sf2 <- plots$simulation_rho_metaspots
+sf2 <- plots$promoter_similarity_distros +
+    labs(
+        title = "Motif-based promoter similarities between paralogs",
+        x = "Multiset Sorensen-Dice similarity", y = "Mode"
+    )
 
 ## Save to file
 ggsave(
-    sf2, width = 9, height = 5,
+    sf2, width = 8, height = 4,
     file = here("products", "figs", "Sup_Figure_02.pdf")
 )
 
-# Fig. S3: dissimilarity between module eigengenes ----
+# Fig. S3: gene-gene correlations for increasingly large metaspots ----
 ## Create figure
-sf3 <- plots$ME_similarities_diverged_pairs
+sf3 <- plots$simulation_rho_metaspots
 
 ## Save to file
 ggsave(
-    sf3, width = 8, height = 4,
+    sf3, width = 9, height = 5,
     file = here("products", "figs", "Sup_Figure_03.pdf")
+)
+
+# Fig. S4: correlations over time ----
+## Create figure
+sf4 <- plots$expression_divergence_over_time
+
+## Save to file
+ggsave(
+    sf4, width = 10, height = 8,
+    file = here("products", "figs", "Sup_Figure_04.pdf")
+)
+
+# Fig. S5: dissimilarity between module eigengenes ----
+## Create figure
+sf5 <- plots$ME_similarities_diverged_pairs
+
+## Save to file
+ggsave(
+    sf5, width = 8, height = 4,
+    file = here("products", "figs", "Sup_Figure_05.pdf")
+)
+
+# Fig. S6-SX: absolute expression differences between paralogs ----
+## A. thaliana
+sf6 <- wrap_plots(
+    plots$expression_differences_paralogs$`Ath__BRAS a` +
+        facet_wrap(vars(cell_type), nrow = 1) +
+        labs(subtitle = "A. thaliana, BRAS a"),
+    plots$expression_differences_paralogs$`Ath__BRAS b` +
+        facet_wrap(vars(cell_type), nrow = 1) +
+        labs(title = NULL, subtitle = "A. thaliana, BRAS b"),
+    nrow = 2
+) +
+    plot_layout(axes = "collect") &
+    labs(y = "Mode", x = expression(log[2] ~ "absolute difference")) &
+    theme(plot.subtitle = element_text(face = "italic"))
+
+ggsave(
+    sf6, width = 10, height = 6,
+    file = here("products", "figs", "Sup_Figure_06.pdf")
+)
+
+## G. max
+sf7 <- wrap_plots(
+    plots$expression_differences_paralogs$Gma__GLYC +
+        facet_wrap(vars(cell_type), nrow = 1) +
+        labs(subtitle = "G. max, GLYC"),
+    plots$expression_differences_paralogs$Gma__PAPI +
+        facet_wrap(vars(cell_type), nrow = 1) +
+        labs(title = NULL, subtitle = "G. max, PAPI"),
+    nrow = 2
+) +
+    plot_layout(axes = "collect") &
+    labs(y = "Mode", x = expression(log[2] ~ "absolute difference")) &
+    theme(plot.subtitle = element_text(face = "italic"))
+
+ggsave(
+    sf7, width = 8, height = 5,
+    file = here("products", "figs", "Sup_Figure_07.pdf")
+)
+
+## P. aphrodite
+sf8 <- plots$expression_differences_paralogs$Pap__ORCH +
+    facet_wrap(vars(cell_type), nrow = 3) +
+    labs(
+        subtitle = "P. aphrodite, ORCH", y = "Mode",
+        x = expression(log[2] ~ "absolute difference")
+    ) +
+    theme(plot.subtitle = element_text(face = "italic"))
+
+ggsave(
+    sf8, width = 8, height = 6,
+    file = here("products", "figs", "Sup_Figure_08.pdf")
+)
+
+## Z. mays
+sf9 <- wrap_plots(
+    plots$expression_differences_paralogs$Zma__ZEAM +
+        facet_wrap(vars(cell_type), nrow = 2) +
+        labs(subtitle = "Z. mays, ZEAM"),
+    plots$expression_differences_paralogs$Zma__POAC +
+        facet_wrap(vars(cell_type), nrow = 2) +
+        labs(title = NULL, subtitle = "Z. mays, POAC"),
+    nrow = 2
+) +
+    plot_layout(axes = "collect") &
+    labs(y = "Mode", x = expression(log[2] ~ "absolute difference")) &
+    theme(plot.subtitle = element_text(face = "italic"))
+
+ggsave(
+    sf9, width = 8, height = 8,
+    file = here("products", "figs", "Sup_Figure_09.pdf")
+)
+
+## H. vulgare
+sf10 <- plots$expression_differences_paralogs$Hvu__POAC +
+    facet_wrap(vars(cell_type), nrow = 3) +
+    labs(
+        subtitle = "H. vulgare, POAC", y = "Mode",
+        x = expression(log[2] ~ "absolute difference")
+    ) +
+    theme(plot.subtitle = element_text(face = "italic"))
+
+ggsave(
+    sf10, width = 7, height = 6,
+    file = here("products", "figs", "Sup_Figure_10.pdf")
 )
 
 
@@ -290,5 +400,3 @@ write <- lapply(seq_along(pdf_figs), function(x) {
     w <- magick::image_write(pdf_figs[[x]], path = fname, density = 300)
     return(w)
 })
-
-
